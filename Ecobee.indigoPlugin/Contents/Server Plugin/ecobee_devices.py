@@ -8,8 +8,6 @@ import temperature_scale
 import logging
 import pyecobee
 
-logging.getLogger("requests").setLevel(logging.WARNING)
-
 log = logging.getLogger('indigo.ecobee.plugin')
 
 
@@ -149,8 +147,6 @@ class EcobeeBase:
 
 class EcobeeThermostat(EcobeeBase):
     ## This is for the Ecobee3 generation and later of products with occupancy detection and remote RF sensors
-    def __init__(self, address, dev, pyecobee):
-        EcobeeBase.__init__(self, address, dev, pyecobee)
 
     def updateServer(self):
         log.debug("updating ecobee3 thermostat from server")
@@ -214,14 +210,9 @@ class EcobeeThermostat(EcobeeBase):
 
 class EcobeeSmartThermostat(EcobeeBase):
     ## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
-    def __init__(self, address, dev, pyecobee):
-        self.address = address
-        self.dev = dev
-        self.pyecobee = pyecobee
-        self.name = address # temporary name until we get the real one from the server
 
     def updateServer(self):
-        log.debug("updating smart thermostat from server")
+        log.debug("updating Smart thermostat from server")
 
         self._update_server_authenticated()
 

@@ -1,7 +1,28 @@
 <?xml version="1.0"?>
 <Devices>
+    <Device type="thermostat" id="EcobeeSmartThermostat">
+        <Name>Ecobee 'Smart' or 'Smart Si' Thermostat</Name>
+        <ConfigUI>
+            <Field id="address" type="menu">
+                <List class="self" method="get_thermostats"/>
+            </Field>
+        </ConfigUI>
+        <States>
+            <State id="climate">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Climate</TriggerLabel>
+                <ControlPageLabel>Climate</ControlPageLabel>
+            </State>
+            <State id="authenticated" readonly="true">
+                <ValueType boolType="YesNo">Boolean</ValueType>
+                <TriggerLabel>Authenticated</TriggerLabel>
+                <ControlPageLabel>Authenticated</ControlPageLabel>
+            </State>
+        </States>
+    </Device>
+
     <Device type="thermostat" id="EcobeeThermostat">
-        <Name>Ecobee Thermostat</Name>
+        <Name>Ecobee 3 or Ecobee 4 Thermostat</Name>
         <ConfigUI>
             <Field id="address" type="menu">
                 <List class="self" method="get_thermostats"/>
@@ -37,27 +58,6 @@
                 <ValueType>Integer</ValueType>
                 <TriggerLabel>Minimum fan time</TriggerLabel>
                 <ControlPageLabel>Minimum fan time</ControlPageLabel>
-            </State>
-        </States>
-    </Device>
-
-    <Device type="thermostat" id="EcobeeSmartThermostat">
-        <Name>Ecobee Smart Thermostat</Name>
-        <ConfigUI>
-            <Field id="address" type="menu">
-                <List class="self" method="get_thermostats"/>
-            </Field>
-        </ConfigUI>
-        <States>
-            <State id="climate">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Climate</TriggerLabel>
-                <ControlPageLabel>Climate</ControlPageLabel>
-            </State>
-            <State id="authenticated" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Authenticated</TriggerLabel>
-                <ControlPageLabel>Authenticated</ControlPageLabel>
             </State>
         </States>
     </Device>

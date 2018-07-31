@@ -82,16 +82,19 @@ class Ecobee(object):
         try:
             request = requests.get(url, params=params)
         except RequestException:
-            logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
-                        "Could not request pin.")
+            logger.error("Error connecting to Ecobee.  Possible connectivity outage.  Could not request pin.")
             return
-        self.authorization_code = request.json()['code']
-        self.pin = request.json()['ecobeePin']
-        logger.error('Please authorize your ecobee developer app with PIN code '
-              + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
-              '/index.html, click\nMy Apps, Add application, Enter Pin'
-              ' and click Authorize.\nAfter authorizing, call request_'
-              'tokens() method.')
+        if request.status_code == requests.codes.ok:
+            self.authorization_code = request.json()['code']
+            self.pin = request.json()['ecobeePin']
+            logger.error('Please authorize your ecobee developer app with PIN code '
+                  + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
+                  '/index.html, click\nMy Apps, Add application, Enter Pin'
+                  ' and click Authorize.\nAfter authorizing, call request_'
+                  'tokens() method.')
+        else:
+            logger.error("PIN request failed, Ecobee servers returned error code {}".format(request.status_code))
+            return
 
     def request_tokens(self):
         ''' Method to request API tokens from ecobee '''
@@ -101,8 +104,7 @@ class Ecobee(object):
         try:
             request = requests.post(url, params=params)
         except RequestException:
-            logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
-                        "Could not request token.")
+            logger.error("Error connecting to Ecobee.  Possible connectivity outage.  Could not request token.")
             return
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
@@ -110,8 +112,7 @@ class Ecobee(object):
             self.write_tokens_to_file()
             self.pin = None
         else:
-            logger.warn('Error while requesting tokens from ecobee.com.'
-                  ' Status code: ' + str(request.status_code))
+            logger.warn("Token request failed, Ecobee servers returned error code {}".format(request.status_code))
             return
 
     def refresh_tokens(self):
@@ -120,14 +121,19 @@ class Ecobee(object):
         params = {'grant_type': 'refresh_token',
                   'refresh_token': self.refresh_token,
                   'client_id': self.api_key}
-        request = requests.post(url, params=params)
+        try:
+            request = requests.post(url, params=params)
+        except RequestException:
+            logger.error("Error connecting to Ecobee.  Possible connectivity outage.  Could not refresh token.")
+            return
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
             return True
         else:
-            self.request_pin()
+            logger.warn("Token refresh failed, Ecobee servers returned error code {}".format(request.status_code))
+#            self.request_pin()
 
     def get_thermostats(self):
         ''' Set self.thermostats to a json list of thermostats from ecobee '''
@@ -152,13 +158,15 @@ class Ecobee(object):
             self.thermostats = request.json()['thermostatList']
             return self.thermostats
         else:
-            self.authenticated = False
-            logger.info("Error connecting to Ecobee while attempting to get "
-                  "thermostat data.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.get_thermostats()
-            else:
-                return None
+            logger.warn("Update failed, Ecobee servers returned error code {}".format(request.status_code))
+            return None
+#            self.authenticated = False
+#            logger.info("Error connecting to Ecobee while attempting to get "
+#                  "thermostat data.  Refreshing tokens and trying again.")
+#            if self.refresh_tokens():
+#                return self.get_thermostats()
+#            else:
+#                return None
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
@@ -192,16 +200,17 @@ class Ecobee(object):
         try:
             request = requests.post(url, headers=header, params=params, json=body)
         except RequestException:
-            logger.warn("Error connecting to Ecobee.  Possible connectivity outage.")
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage. Could not make request {}".format(log_msg_action))
             return None
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.info("Error connecting to Ecobee while attempting to {}. Status code = {}.  Refreshing tokens and trying again.".format(log_msg_action, request.status_code))
-            if self.refresh_tokens():
-                return self.make_request(body, log_msg_action)
-            else:
-                return None
+            logger.info("Error while attempting to {}. Ecobee servers returned error code = {}.".format(log_msg_action, request.status_code))
+            return None
+#            if self.refresh_tokens():
+#                return self.make_request(body, log_msg_action)
+#            else:
+#                return None
 
     def set_hvac_mode(self, index, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''

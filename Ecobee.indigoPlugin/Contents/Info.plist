@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>PluginVersion</key>
-	<string>1.2.3</string>
+	<string>1.2.4</string>
 	<key>ServerApiVersion</key>
 	<string>1.0</string>
 	<key>IwsApiVersion</key>
@@ -21,13 +21,5 @@
 			<string>http://ecobee.drjason.com</string>
 		</dict>
 	</array>
-	<key>GithubInfo</key>
-	<dict>
-		<key>GithubRepo</key>
-		<string>indigo-ecobee-plugin</string>
-		<key>GithubUser</key>
-		<string>jdhorne</string>
-	</dict>
-
 </dict>
 </plist>

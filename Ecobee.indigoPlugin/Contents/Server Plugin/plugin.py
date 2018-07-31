@@ -28,8 +28,7 @@ TEMP_FORMATTERS = {
     'R': temperature_scale.Rankine()
 }
 
-#   PLugin-enforced minimum and maximum setpoint
-#   ranges per temperature scale
+#   Plugin-enforced minimum and maximum setpoint ranges per temperature scale
 ALLOWED_RANGE = {
     'F': (40,95),
     'C': (6,35),
@@ -375,6 +374,9 @@ class Plugin(indigo.PluginBase):
 
     def climateListGenerator(self, filter, valuesDict, typeId, targetId):                                                                                                                 
         for t in self.active_thermostats:
+            if t.dev.id == targetId:
+                retList = get_climates(self.ecobee, t.dev.address)
+        for t in self.active_smart_thermostats:
             if t.dev.id == targetId:
                 retList = get_climates(self.ecobee, t.dev.address)
         return retList
