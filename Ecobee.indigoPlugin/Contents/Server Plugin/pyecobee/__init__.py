@@ -151,7 +151,7 @@ class Ecobee(object):
         try:
             request = requests.get(url, headers=header, params=params)
         except RequestException:
-            logger.warn("Error connecting to Ecobee.  Possible connectivity outage.")
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage. Could not get thermostats.")
             return None
         if request.status_code == requests.codes.ok:
             self.authenticated = True
@@ -188,9 +188,9 @@ class Ecobee(object):
         else:
             self.config = config
 
-    def update(self):
-        ''' Get new thermostat data from ecobee '''
-        self.get_thermostats()
+#    def update(self):
+#        ''' Get new thermostat data from ecobee '''
+#        self.get_thermostats()
 
     def make_request(self, body, log_msg_action):
         url = 'https://api.ecobee.com/1/thermostat'

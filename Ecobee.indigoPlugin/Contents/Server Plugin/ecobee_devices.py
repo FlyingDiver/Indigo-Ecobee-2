@@ -40,10 +40,9 @@ kFanModeEnumToStrMap = {
 }
 
 def _get_thermostats_json(ecobee):
-    ecobee.update()
     return ecobee.get_thermostats()
 
-def get_thermostats(ecobee):
+def _get_thermostats(ecobee):
     return [
         (th.get('identifier'), th.get('name'))
         for th in _get_thermostats_json(ecobee)
@@ -51,7 +50,10 @@ def get_thermostats(ecobee):
 
 def _get_thermostat_json(ecobee, address):
     ths = _get_thermostats_json(ecobee)
-    log.threaddebug("looking for thermostat %s in %s" % (address, ths))
+    if not ths:
+        return None
+        
+    log.threaddebug("_get_thermostat_json: looking for thermostat %s in %s" % (address, ths))
     return [
         th for th in ths
         if address == th.get('identifier')
@@ -157,6 +159,9 @@ class EcobeeThermostat(EcobeeBase):
             return
 
         thermostat = _get_thermostat_json(self.pyecobee, self.address)
+        if not thermostat:
+            return
+            
         runtime = thermostat.get('runtime')
         hsp = runtime.get('desiredHeat')
         csp = runtime.get('desiredCool')
@@ -206,7 +211,7 @@ class EcobeeThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="autoHome", value=bool(latestEventType and ('autoHome' in latestEventType)))
         self.dev.updateStateOnServer(key="autoAway", value=bool(latestEventType and ('autoAway' in latestEventType)))
 
-        return matchedSensor
+        return
 
 class EcobeeSmartThermostat(EcobeeBase):
     ## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
@@ -220,6 +225,9 @@ class EcobeeSmartThermostat(EcobeeBase):
             return
 
         thermostat = _get_thermostat_json(self.pyecobee, self.address)
+        if not thermostat:
+            return
+            
         runtime = thermostat.get('runtime')
         hsp = runtime.get('desiredHeat')
         csp = runtime.get('desiredCool')
@@ -252,7 +260,7 @@ class EcobeeSmartThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
         self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
 
-        return self
+        return
 
 
 class EcobeeRemoteSensor(EcobeeBase):
@@ -281,4 +289,4 @@ class EcobeeRemoteSensor(EcobeeBase):
             self.dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
 
-        return matchedSensor
+        return

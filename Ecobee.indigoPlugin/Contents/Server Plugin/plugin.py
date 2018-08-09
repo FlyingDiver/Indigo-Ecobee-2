@@ -171,7 +171,8 @@ class Plugin(indigo.PluginBase):
                     self.next_refresh = time.time() + REFRESH_INTERVAL
 
                 if self.ecobee.authenticated:
-                    self.ecobee.update()
+#                    self.ecobee.update()
+                    self.ecobee.get_thermostats()
                     
                     # We need to also re-save the authentication credentials now, since self.ecobee.update() may change them
                     self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
@@ -251,44 +252,36 @@ class Plugin(indigo.PluginBase):
         dev.stateListOrDisplayStateIdChanged() # in case any states added/removed after plugin upgrade
 
         if dev.model == 'Ecobee Remote Sensor':
-            self.log.debug("deviceStartComm: creating EcobeeRemoteSensor")
-            newDevice = EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee)
-            self.active_remote_sensors.append(newDevice)
 
-            # set icon to 'temperature sensor'
             dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
+            newDevice = EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee)
+            self.active_remote_sensors.append(newDevice)
             indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
 
         elif dev.model == 'Ecobee Thermostat':
-            # Add support for the thermostat's humidity sensor
+
             newProps = dev.pluginProps
             newProps["NumHumidityInputs"] = 1
             newProps["NumTemperatureInputs"] = 2
-            # SHENANIGANS: the following property has to be set in order for us to report
-            #   whether the thermostat is presently heating, cooling, etc.
-            #   This was difficult to find.
             newProps["ShowCoolHeatEquipmentStateUI"] = True
             dev.replacePluginPropsOnServer(newProps)
+
             newDevice = EcobeeThermostat(dev.pluginProps["address"], dev, self.ecobee)
             self.active_thermostats.append(newDevice)
             indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
         elif dev.model == 'Ecobee Smart Thermostat':
-            # Add support for the thermostat's humidity sensor
+
             newProps = dev.pluginProps
             newProps["NumHumidityInputs"] = 1
-            # SHENANIGANS: the following property has to be set in order for us to report
-            #   whether the thermostat is presently heating, cooling, etc.
-            #   This was difficult to find.
             newProps["ShowCoolHeatEquipmentStateUI"] = True
             dev.replacePluginPropsOnServer(newProps)
+
             newDevice = EcobeeSmartThermostat(dev.pluginProps["address"], dev, self.ecobee)
             self.active_smart_thermostats.append(newDevice)
             indigo.server.log("added smart thermostat %s" % dev.pluginProps["address"])
 
-        # TODO: try to set initial name for new devices, as other plugins do.
-        # However, this doesn't work yet. Sad clown.
         self.log.debug('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
         if dev.name == 'new device' and newDevice.name:
             dev.name = newDevice.name
@@ -313,12 +306,24 @@ class Plugin(indigo.PluginBase):
             ]
 
     def updateAllDevices(self):
-        for ers in self.active_remote_sensors:
-            ers.updateServer()
-        for t in self.active_thermostats:
-            t.updateServer()
-        for st in self.active_smart_thermostats:
-            st.updateServer()
+        try:
+            for ers in self.active_remote_sensors:
+                ers.updateServer()
+        except Exception, e:
+            logging.exception(u"Error updating remote sensors"
+        
+        try:
+            for t in self.active_thermostats:
+                t.updateServer()
+        except Exception, e:
+            logging.exception(u"Error updating thermostats"
+        
+        try:
+            for st in self.active_smart_thermostats:
+                st.updateServer()
+        except Exception, e:
+            logging.exception(u"Error updating smart thermostats"
+        
 
     ########################################
     # Thermostat Action callback
