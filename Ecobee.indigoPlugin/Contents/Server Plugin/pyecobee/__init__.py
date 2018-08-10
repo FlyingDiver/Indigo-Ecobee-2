@@ -188,9 +188,9 @@ class Ecobee(object):
         else:
             self.config = config
 
-#    def update(self):
-#        ''' Get new thermostat data from ecobee '''
-#        self.get_thermostats()
+    def update(self):
+        ''' Get new thermostat data from ecobee '''
+        self.get_thermostats()
 
     def make_request(self, body, log_msg_action):
         url = 'https://api.ecobee.com/1/thermostat'

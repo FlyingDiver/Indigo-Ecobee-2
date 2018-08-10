@@ -309,20 +309,20 @@ class Plugin(indigo.PluginBase):
         try:
             for ers in self.active_remote_sensors:
                 ers.updateServer()
-        except Exception, e:
-            logging.exception(u"Error updating remote sensors"
+        except:
+            logging.exception(u"Error updating remote sensors")
         
         try:
             for t in self.active_thermostats:
                 t.updateServer()
-        except Exception, e:
-            logging.exception(u"Error updating thermostats"
+        except:
+            logging.exception(u"Error updating thermostats")
         
         try:
             for st in self.active_smart_thermostats:
                 st.updateServer()
-        except Exception, e:
-            logging.exception(u"Error updating smart thermostats"
+        except:
+            logging.exception(u"Error updating smart thermostats")
         
 
     ########################################
