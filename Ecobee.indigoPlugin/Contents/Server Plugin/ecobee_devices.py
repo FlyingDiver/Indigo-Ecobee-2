@@ -53,7 +53,7 @@ def _get_thermostat_json(ecobee, address):
     if not ths:
         return None
         
-    log.threaddebug("_get_thermostat_json: looking for thermostat %s in %s" % (address, ths))
+#    log.threaddebug("_get_thermostat_json: looking for thermostat %s in %s" % (address, ths))
     return [
         th for th in ths
         if address == th.get('identifier')
@@ -139,7 +139,11 @@ class EcobeeBase:
         return temperature
 
     def _update_server_occupancy(self, matchedSensor):
-        occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
+        try:
+            occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
+        except:
+            return false
+            
         occupied = ( 'true' == occupancyCapability.get('value') )
         self.dev.updateStateOnServer(key=u"occupied", value=occupied)
         return occupied
@@ -160,7 +164,10 @@ class EcobeeThermostat(EcobeeBase):
 
         thermostat = _get_thermostat_json(self.pyecobee, self.address)
         if not thermostat:
+            log.debug("updateServer: no thermostat found for address {}".format(self.address))
             return
+
+        log.debug("updateServer: thermostat {} -\n{}".format(self.address, thermostat))
             
         runtime = thermostat.get('runtime')
         hsp = runtime.get('desiredHeat')
