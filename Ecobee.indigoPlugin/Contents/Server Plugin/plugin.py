@@ -251,7 +251,7 @@ class Plugin(indigo.PluginBase):
     def deviceStartComm(self, dev):
         dev.stateListOrDisplayStateIdChanged() # in case any states added/removed after plugin upgrade
 
-        if dev.model == 'Ecobee Remote Sensor':
+        if dev.deviceTypeId == 'ecobeeRemoteSensor':
 
             dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
@@ -259,7 +259,7 @@ class Plugin(indigo.PluginBase):
             self.active_remote_sensors.append(newDevice)
             indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
 
-        elif dev.model == 'Ecobee Thermostat':
+        elif dev.deviceTypeId == 'EcobeeThermostat':
 
             newProps = dev.pluginProps
             newProps["NumHumidityInputs"] = 1
@@ -271,7 +271,7 @@ class Plugin(indigo.PluginBase):
             self.active_thermostats.append(newDevice)
             indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
-        elif dev.model == 'Ecobee Smart Thermostat':
+        elif dev.deviceTypeId == 'EcobeeSmartThermostat':
 
             newProps = dev.pluginProps
             newProps["NumHumidityInputs"] = 1
@@ -282,6 +282,10 @@ class Plugin(indigo.PluginBase):
             self.active_smart_thermostats.append(newDevice)
             indigo.server.log("added smart thermostat %s" % dev.pluginProps["address"])
 
+        else:
+            self.errorLog("Unknown Ecobee device type: {}".format(dev.deviceTypeId))
+            return
+
         self.log.debug('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
         if dev.name == 'new device' and newDevice.name:
             dev.name = newDevice.name
@@ -289,17 +293,17 @@ class Plugin(indigo.PluginBase):
             self.log.debug('device name set to %s' % dev.name)
 
     def deviceStopComm(self, dev):
-        if dev.model == 'Ecobee Remote Sensor':
+        if dev.deviceTypeId == 'ecobeeRemoteSensor':
             self.active_remote_sensors = [
                 rs for rs in self.active_remote_sensors
                     if rs.address != dev.pluginProps["address"]
             ]
-        elif dev.model == 'Ecobee Thermostat':
+        elif dev.deviceTypeId == 'EcobeeThermostat':
             self.active_thermostats = [
                 t for t in self.active_thermostats
                     if t.address != dev.pluginProps["address"]
             ]
-        elif dev.model == 'Ecobee Smart Thermostat':
+        elif dev.deviceTypeId == 'EcobeeSmartThermostat':
             self.active_smart_thermostats = [
                 st for st in self.active_smart_thermostats
                     if st.address != dev.pluginProps["address"]

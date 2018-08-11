@@ -42,7 +42,7 @@ kFanModeEnumToStrMap = {
 def _get_thermostats_json(ecobee):
     return ecobee.get_thermostats()
 
-def _get_thermostats(ecobee):
+def get_thermostats(ecobee):
     return [
         (th.get('identifier'), th.get('name'))
         for th in _get_thermostats_json(ecobee)
