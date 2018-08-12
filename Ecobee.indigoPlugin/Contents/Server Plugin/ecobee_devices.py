@@ -142,7 +142,7 @@ class EcobeeBase:
         try:
             occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
         except:
-            return false
+            return False
             
         occupied = ( 'true' == occupancyCapability.get('value') )
         self.dev.updateStateOnServer(key=u"occupied", value=occupied)
