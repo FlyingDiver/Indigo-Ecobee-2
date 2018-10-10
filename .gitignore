@@ -7,3 +7,4 @@ get_thermostats_sample_response.json
 get_thermostats_sample_response_2.json
 examples
 /errors.txt
+/thermostat.json
