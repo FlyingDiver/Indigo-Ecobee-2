@@ -6,10 +6,7 @@ import json
 import indigo
 import temperature_scale
 import logging
-import pyecobee
-
-log = logging.getLogger('indigo.ecobee.plugin')
-
+import ecobee
 
 HVAC_MODE_MAP = {
     'heat'        : indigo.kHvacMode.Heat,
@@ -19,118 +16,43 @@ HVAC_MODE_MAP = {
     'off'         : indigo.kHvacMode.Off
 }
 
-kHvacModeEnumToStrMap = {
-    indigo.kHvacMode.Cool               : u"cool",
-    indigo.kHvacMode.Heat               : u"heat",
-    indigo.kHvacMode.HeatCool           : u"auto",
-    indigo.kHvacMode.Off                : u"off",
-    indigo.kHvacMode.ProgramHeat        : u"program heat",
-    indigo.kHvacMode.ProgramCool        : u"program cool",
-    indigo.kHvacMode.ProgramHeatCool    : u"program auto"
-}
-
 FAN_MODE_MAP = {
     'auto': indigo.kFanMode.Auto,
     'on'  : indigo.kFanMode.AlwaysOn
 }
 
-kFanModeEnumToStrMap = {
-    indigo.kFanMode.Auto            : u"auto",
-    indigo.kFanMode.AlwaysOn        : u"on"
-}
-
-def _get_thermostats_json(ecobee):
-    return ecobee.get_thermostats()
-
-def get_thermostats(ecobee):
-    return [
-        (th.get('identifier'), th.get('name'))
-        for th in _get_thermostats_json(ecobee)
-    ]
-
-def _get_thermostat_json(ecobee, address):
-    ths = _get_thermostats_json(ecobee)
-    if not ths:
-        return None
-        
-#    log.threaddebug("_get_thermostat_json: looking for thermostat %s in %s" % (address, ths))
-    return [
-        th for th in ths
-        if address == th.get('identifier')
-    ][0]
-
-def _get_remote_sensors_json(ecobee):
-    return [
-        rs
-        for th in _get_thermostats_json(ecobee)
-        for rs in th['remoteSensors']
-            if ('ecobee3_remote_sensor' == rs.get('type'))
-    ]
-
-def get_remote_sensors(ecobee):
-    return [
-        (rs.get('code'), rs.get('name'))
-        for rs in _get_remote_sensors_json(ecobee)
-    ]
-
-
-def _get_remote_sensor_json(ecobee, address):
-    rss = _get_remote_sensors_json(ecobee)
-    log.threaddebug("looking for remote sensor %s in %s" % (address, rss))
-    return [
-        rs for rs in rss
-        if address == rs.get('code')
-    ][0]
-
-
-def get_climates(ecobee, address):
-    return [
-        (rs.get('climateRef'), rs.get('name'))
-        for rs in _get_climates_json(ecobee, address)
-    ]
-
-def _get_climates_json(ecobee, address):
-    thermostat = _get_thermostat_json(ecobee, address)
-    return thermostat.get('program').get('climates')
-
- 
-def _get_capability(obj, cname):
-    ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
-    return ret
-
 class EcobeeBase:
     temperatureFormatter = temperature_scale.Fahrenheit()
 
-    def __init__(self, address, dev, pyecobee):
-        self.address = address
+    def __init__(self, dev, ecobee):
+        self.logger = logging.getLogger('Plugin.ecobee_devices')
+        
         self.dev = dev
-        self.pyecobee = pyecobee
-        self.name = address # temporary name until we get the real one from the server
-        matchedSensor = self.updateServer()
+        self.address = dev.pluginProps["address"]
+        self.ecobee = ecobee
+        self.name = self.address # temporary name until we get the real one from the server
+
+    def get_capability(obj, cname):
+        ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
+        return ret
 
     def updatable(self):
         if not self.dev.configured:
-            log.debug('device %s not fully configured yet; not updating state' % self.address)
+            self.logger.debug('device %s not fully configured yet; not updating state' % self.address)
             return False
-        if not self.pyecobee.authenticated:
-            log.info('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
+        if not self.ecobee.authenticated:
+            self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device %s' % self.address)
             return False
-        ts = self.pyecobee.get_thermostats()
+        ts = self.ecobee.get_thermostats()
         if None == ts:
-            log.warning('no thermostats found; authenticated?')
+            self.logger.warning('no thermostats found; authenticated?')
             return False
-#       else:
-#           indigo.server.log('thermostat data:')
-#           indigo.server.log(json.dumps(ts, sort_keys=True, indent=4, separators=(',', ': ')))
 
         return True
 
-    def _update_server_authenticated(self):
-        self.dev.updateStateOnServer(key="authenticated", value=self.pyecobee.authenticated)
-
     def _update_server_temperature(self, matchedSensor, stateKey):
-        tempCapability = _get_capability(matchedSensor, 'temperature')
-        log.debug('Sensor Temp: %s' % tempCapability.get('value'))
+        tempCapability = self.get_capability(matchedSensor, 'temperature')
+        self.logger.debug('Sensor Temp: %s' % tempCapability.get('value'))
         return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
         return temperature
 
@@ -154,20 +76,18 @@ class EcobeeBase:
 class EcobeeThermostat(EcobeeBase):
     ## This is for the Ecobee3 generation and later of products with occupancy detection and remote RF sensors
 
-    def updateServer(self):
-        log.debug("updating ecobee3 thermostat from server")
-
-        self._update_server_authenticated()
+    def update(self):
+        self.logger.debug("updating Ecobee3/4 thermostat from server")
 
         if not self.updatable():
             return
 
-        thermostat = _get_thermostat_json(self.pyecobee, self.address)
+        thermostat = self.ecobee.get_thermostat(self.address)
         if not thermostat:
-            log.debug("updateServer: no thermostat found for address {}".format(self.address))
+            self.logger.debug("update: no thermostat found for address {}".format(self.address))
             return
 
-        log.debug("updateServer: thermostat {} -\n{}".format(self.address, thermostat))
+        self.logger.debug("update: thermostat {} -\n{}".format(self.address, thermostat))
             
         runtime = thermostat.get('runtime')
         hsp = runtime.get('desiredHeat')
@@ -186,7 +106,7 @@ class EcobeeThermostat(EcobeeBase):
         if thermostat.get('events') and len(thermostat.get('events')) > 0:
             latestEventType = thermostat.get('events')[0].get('type')
 
-        log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+        self.logger.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
         # should be exactly one; if not, we should panic
         matchedSensor = [
@@ -202,7 +122,7 @@ class EcobeeThermostat(EcobeeBase):
         self._update_server_occupancy(matchedSensor)
 
         # humidity
-        humidityCapability = _get_capability(matchedSensor, 'humidity')
+        humidityCapability = self.get_capability(matchedSensor, 'humidity')
         self.dev.updateStateOnServer(key="humidityInput1", value=float(humidityCapability.get('value')))
 
         EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
@@ -223,15 +143,13 @@ class EcobeeThermostat(EcobeeBase):
 class EcobeeSmartThermostat(EcobeeBase):
     ## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
 
-    def updateServer(self):
-        log.debug("updating Smart thermostat from server")
-
-        self._update_server_authenticated()
+    def update(self):
+        self.logger.debug("updating Ecobee Smart/Si thermostat from server")
 
         if not self.updatable():
             return
 
-        thermostat = _get_thermostat_json(self.pyecobee, self.address)
+        thermostat = self.ecobee.get_thermostat(self.address)
         if not thermostat:
             return
             
@@ -248,7 +166,7 @@ class EcobeeSmartThermostat(EcobeeBase):
 
         status = thermostat.get('equipmentStatus')
 
-        log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+        self.logger.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
         self.name = thermostat.get('name')
 
@@ -274,18 +192,20 @@ class EcobeeRemoteSensor(EcobeeBase):
     def __init__(self, address, dev, pyecobee):
         EcobeeBase.__init__(self, address, dev, pyecobee)
 
-    def updateServer(self):
+    def update(self):
+        self.logger.debug("updating Ecobee Remote Sensor from server")
+
         if not self.updatable():
             return
 
-        matchedSensor = _get_remote_sensor_json(self.pyecobee, self.address)
+        matchedSensor = _get_remote_sensor_json(self.ecobee, self.address)
 
         self.name = matchedSensor.get('name')
 
         try:
             self._update_server_temperature(matchedSensor, u'temperature')
         except ValueError:
-            log.error("%s: couldn't format temperature value; is the sensor alive?" % self.name)
+            self.logger.error("%s: couldn't format temperature value; is the sensor alive?" % self.name)
 
 
         # if occupancy was detected, set the icon to show a 'tripped' motion sensor;

@@ -3,22 +3,22 @@
 <plist version="1.0">
 <dict>
 	<key>PluginVersion</key>
-	<string>1.2.8</string>
+	<string>2.0.0</string>
 	<key>ServerApiVersion</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>IwsApiVersion</key>
 	<string>1.0.0</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ecobee</string>
+	<string>Ecobee 2</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.drjason.ecobee</string>
+	<string>com.flyingdiver.indigoplugin.ecobee</string>
 	<key>CFBundleVersion</key>
 	<string>1.0.1</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>http://ecobee.drjason.com</string>
+            <string>http://forums.indigodomo.com/viewtopic.php?f=211</string>
 		</dict>
 	</array>
 </dict>

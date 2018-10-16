@@ -1,66 +1,68 @@
 <?xml version="1.0"?>
 <PluginConfig>
-	<SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
-
-	<Field id ="temperatureScale" type="menu">
-		<Label>Temperature scale:</Label>
-		<List>
-			<Option value="F">Fahrenheit</Option>
-			<Option value="C">Celsius</Option>
-			<Option value="K">Kelvin</Option>
-			<Option value="R">Rankine</Option>
-		</List>
-	</Field>
-    <Field id="updateFrequency" type="textfield" defaultValue="60">
-        <Label>Update frequency (minutes):</Label>
-    </Field>
-    <Field id="statusNote" type="label" fontSize="small" fontColor="darkgray">
-        <Label>Minimum update interval is 15 seconds.  Default is 60.</Label>
-    </Field>
-    <Field id="logLevel" type="menu" defaultValue="20">
-        <Label>Event Logging Level:</Label>
-        <List>
-            <Option value="5">Detailed Debugging Messages</Option>
-            <Option value="10">Debugging Messages</Option>
-            <Option value="20">Informational Messages</Option>
-            <Option value="30">Warning Messages</Option>
-            <Option value="40">Error Messages</Option>
-            <Option value="50">Critical Errors Only</Option>
-        </List>
-    </Field>            
-
-	<Field id="separator1" type="separator"/>
-
+  <SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
+  
+  <Field id="temperatureScale" type="menu">
+    <Label>Temperature scale:</Label>
+    <List>
+      <Option value="F">Fahrenheit</Option>
+      <Option value="C">Celsius</Option>
+      <Option value="K">Kelvin</Option>
+      <Option value="R">Rankine</Option>
+    </List>
+  </Field>
+  
+  <Field id="updateFrequency" type="textfield" defaultValue="60">
+    <Label>Update frequency (minutes):</Label>
+  </Field>
+ 
+  <Field id="statusNote" type="label" fontSize="small" fontColor="darkgray">
+    <Label>Minimum update interval is 15 seconds.  Default is 60.</Label>
+  </Field>
+ 
+  <Field id="logLevel" type="menu" defaultValue="20">
+    <Label>Event Logging Level:</Label>
+    <List>
+      <Option value="5">Detailed Debugging Messages</Option>
+      <Option value="10">Debugging Messages</Option>
+      <Option value="20">Informational Messages</Option>
+      <Option value="30">Warning Messages</Option>
+      <Option value="40">Error Messages</Option>
+      <Option value="50">Critical Errors Only</Option>
+    </List>
+  </Field>
+ 
+  <Field id="separator1" type="separator"/>
+ 
   <Field id="getPin" type="button">
     <Label>1. Click to obtain an Ecobee PIN:</Label>
     <Title>Get PIN</Title>
     <CallbackMethod>request_pin</CallbackMethod>
   </Field>
-	<Field id="pin" type="textfield" readonly="true">
-		<Label>PIN:</Label>
-	</Field>
-	<Field id="openEcobee" type="button">
+ 
+  <Field id="pin" type="textfield" readonly="true">
+    <Label>PIN:</Label>
+  </Field>
+ 
+  <Field id="openEcobee" type="button">
     <Label>2. Register the PIN on your Ecobee account:</Label>
-    <Title>Open Ecobee Site</Title>
+    <Title>Open Ecobee Site ("http://www.ecobee.com")</Title>
     <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
   </Field>
-	<Field id="refreshCredentials" type="button">
-    <Label>3. Refresh your credentials:</Label>
+ 
+  <Field id="getTokens" type="button">
+    <Label>3. Get account tokens:</Label>
     <Title>Refresh</Title>
-    <CallbackMethod>refresh_credentials</CallbackMethod>
+    <CallbackMethod>get_tokens</CallbackMethod>
   </Field>
-
-	<Field id="separator2" type="separator"/>
-
-	<Field id="accessToken" type="textfield" readonly="true">
-		<Label>Access Token:</Label>
-	</Field>
-	<Field id="authorizationCode" type="textfield" readonly="true">
-		<Label>Authorization Code:</Label>
-	</Field>
-	<Field id="refreshToken" type="textfield" readonly="true">
-		<Label>Refresh Token:</Label>
-	</Field>
-
-
+ 
+  <Field id="separator2" type="separator"/>
+ 
+  <Field id="accessToken" type="textfield" readonly="true">
+    <Label>Access Token:</Label>
+  </Field>
+ 
+  <Field id="refreshToken" type="textfield" readonly="true">
+    <Label>Refresh Token:</Label>
+  </Field>
 </PluginConfig>

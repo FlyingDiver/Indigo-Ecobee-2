@@ -1,18 +1,8 @@
 <?xml version="1.0"?>
 <Devices>
-    <Device type="thermostat" id="EcobeeSmartThermostat">
-        <Name>Ecobee 'Smart' or 'Smart Si' Thermostat</Name>
-        <ConfigUI>
-            <Field id="address" type="menu">
-                <List class="self" method="get_thermostats"/>
-            </Field>
-        </ConfigUI>
+    <Device type="custom" id="EcobeeAccount">
+        <Name>Ecobee User Account</Name>
         <States>
-            <State id="climate">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Climate</TriggerLabel>
-                <ControlPageLabel>Climate</ControlPageLabel>
-            </State>
             <State id="authenticated" readonly="true">
                 <ValueType boolType="YesNo">Boolean</ValueType>
                 <TriggerLabel>Authenticated</TriggerLabel>
@@ -21,11 +11,27 @@
         </States>
     </Device>
 
-    <Device type="thermostat" id="EcobeeThermostat">
-        <Name>Ecobee 3 or Ecobee 4 Thermostat</Name>
+    <Device type="thermostat" id="EcobeeSmartThermostat">
+        <Name>Ecobee 'Smart' or 'Smart Si' Thermostat</Name>
         <ConfigUI>
             <Field id="address" type="menu">
-                <List class="self" method="get_thermostats"/>
+                <List class="self" method="get_thermostat_list"/>
+            </Field>
+        </ConfigUI>
+        <States>
+            <State id="climate">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Climate</TriggerLabel>
+                <ControlPageLabel>Climate</ControlPageLabel>
+            </State>
+        </States>
+    </Device>
+
+    <Device type="thermostat" id="EcobeeThermostat">
+        <Name>Ecobee 3, 3 lite, or 4 Thermostat</Name>
+        <ConfigUI>
+            <Field id="address" type="menu">
+                <List class="self" method="get_thermostat_list"/>
             </Field>
         </ConfigUI>
         <States>
@@ -49,11 +55,6 @@
                 <TriggerLabel>Auto-Home</TriggerLabel>
                 <ControlPageLabel>Auto-Home</ControlPageLabel>
             </State>
-            <State id="authenticated" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Authenticated</TriggerLabel>
-                <ControlPageLabel>Authenticated</ControlPageLabel>
-            </State>
             <State id="fanMinOnTime" readonly="false">
                 <ValueType>Integer</ValueType>
                 <TriggerLabel>Minimum fan time</TriggerLabel>
@@ -62,11 +63,11 @@
         </States>
     </Device>
 
-    <Device type="custom" id="ecobeeRemoteSensor">
+    <Device type="custom" id="EcobeeRemoteSensor">
         <Name>Ecobee Remote Sensor</Name>
         <ConfigUI>
             <Field id="address" type="menu">
-                <List class="self" method="get_remote_sensors"/>
+                <List class="self" method="get_remote_sensor_list"/>
             </Field>
         </ConfigUI>
         <States>
