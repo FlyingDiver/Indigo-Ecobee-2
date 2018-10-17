@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <PluginConfig>
-  <SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
+  <SupportURL>https://forums.indigodomo.com/viewforum.php?f=177</SupportURL>
   
   <Field id="temperatureScale" type="menu">
     <Label>Temperature scale:</Label>
@@ -17,7 +17,7 @@
   </Field>
  
   <Field id="statusNote" type="label" fontSize="small" fontColor="darkgray">
-    <Label>Minimum update interval is 15 seconds.  Default is 60.</Label>
+    <Label>Minimum update interval is 5 minutes.  Default is 15.</Label>
   </Field>
  
   <Field id="logLevel" type="menu" defaultValue="20">
@@ -35,7 +35,7 @@
   <Field id="separator1" type="separator"/>
  
   <Field id="getPin" type="button">
-    <Label>1. Click to obtain an Ecobee PIN:</Label>
+    <Label>1. Get an Ecobee PIN:</Label>
     <Title>Get PIN</Title>
     <CallbackMethod>request_pin</CallbackMethod>
   </Field>
@@ -45,24 +45,21 @@
   </Field>
  
   <Field id="openEcobee" type="button">
-    <Label>2. Register the PIN on your Ecobee account:</Label>
-    <Title>Open Ecobee Site ("http://www.ecobee.com")</Title>
+    <Label>2. Register the PIN:</Label>
+    <Title>Open http://www.ecobee.com</Title>
     <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
   </Field>
  
   <Field id="getTokens" type="button">
-    <Label>3. Get account tokens:</Label>
-    <Title>Refresh</Title>
+    <Label>3. Authenticate:</Label>
+    <Title> GO </Title>
     <CallbackMethod>get_tokens</CallbackMethod>
   </Field>
  
   <Field id="separator2" type="separator"/>
  
-  <Field id="accessToken" type="textfield" readonly="true">
-    <Label>Access Token:</Label>
+  <Field id="authStatus" type="textfield" readonly="true">
+    <Label>Authentication Status:</Label>
   </Field>
  
-  <Field id="refreshToken" type="textfield" readonly="true">
-    <Label>Refresh Token:</Label>
-  </Field>
 </PluginConfig>

@@ -31,7 +31,8 @@ class EcobeeBase:
         self.address = dev.pluginProps["address"]
         self.ecobee = ecobee
         self.name = self.address # temporary name until we get the real one from the server
-
+                
+        
     def get_capability(self, obj, cname):
         ret = None
         ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
@@ -43,10 +44,6 @@ class EcobeeBase:
             return False
         if not self.ecobee.authenticated:
             self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device %s' % self.address)
-            return False
-        ts = self.ecobee.get_thermostats()
-        if None == ts:
-            self.logger.warning('no thermostats found; authenticated?')
             return False
 
         return True
@@ -142,7 +139,6 @@ class EcobeeThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="autoHome", value=bool(latestEventType and ('autoHome' in latestEventType)))
         self.dev.updateStateOnServer(key="autoAway", value=bool(latestEventType and ('autoAway' in latestEventType)))
 
-        return
 
 class EcobeeSmartThermostat(EcobeeBase):
     ## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
@@ -189,12 +185,8 @@ class EcobeeSmartThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
         self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
 
-        return
-
 
 class EcobeeRemoteSensor(EcobeeBase):
-    def __init__(self, address, dev, pyecobee):
-        EcobeeBase.__init__(self, address, dev, pyecobee)
 
     def update(self):
         self.logger.debug("updating Ecobee Remote Sensor from server")
@@ -202,12 +194,13 @@ class EcobeeRemoteSensor(EcobeeBase):
         if not self.updatable():
             return
 
-        matchedSensor = _get_remote_sensor_json(self.ecobee, self.address)
+        matchedSensor = self.ecobee.get_remote_sensor(self.address)
 
         self.name = matchedSensor.get('name')
 
         try:
             self._update_server_temperature(matchedSensor, u'temperature')
+            self._update_server_temperature(matchedSensor, u'sensorValue')
         except ValueError:
             self.logger.error("%s: couldn't format temperature value; is the sensor alive?" % self.name)
 
@@ -219,5 +212,3 @@ class EcobeeRemoteSensor(EcobeeBase):
         else:
             self.dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
-
-        return

@@ -63,9 +63,12 @@
         </States>
     </Device>
 
-    <Device type="custom" id="EcobeeRemoteSensor">
+    <Device type="sensor" id="EcobeeRemoteSensor">
         <Name>Ecobee Remote Sensor</Name>
         <ConfigUI>
+			<Field id="SupportsOnState" type="checkbox" defaultValue="false" hidden="true" />
+			<Field id="SupportsSensorValue" type="checkbox" defaultValue="true" hidden="true" />
+			<Field id="SupportsStatusRequest" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="address" type="menu">
                 <List class="self" method="get_remote_sensor_list"/>
             </Field>

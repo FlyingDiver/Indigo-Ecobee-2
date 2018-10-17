@@ -1,11 +1,6 @@
 import requests
 import json
 import logging
-import indigo
-
-ACCESS_TOKEN_PLUGIN_PREF='accessToken'
-REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
-
 
 #
 # All interactions with the Ecobee servers are encapsulated in this class
@@ -19,9 +14,11 @@ class EcobeeAccount:
         self.authenticated = False
         
         self.api_key = api_key
-        self.refresh_token = refresh_token
-        if self.refresh_token:
+        
+        if refresh_token:
+            self.refresh_token = refresh_token
             self.refresh_tokens()
+            
         if self.authenticated:
             self.server_update()
         
@@ -73,57 +70,49 @@ class EcobeeAccount:
 #   Ecobee Authentication functions
 #
 
-    # Authentication Step 1, called from PluginConfig.xml
-    def request_pin(self, valuesDict = None):
-
-        valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = ''
-        valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = ''
-        valuesDict['pin'] = ''
+    # Authentication Step 1
+    def request_pin(self):
         
         params = {'response_type': 'ecobeePin', 'client_id': self.api_key, 'scope': 'smartWrite'}
         try:
             request = requests.get('https://api.ecobee.com/authorize', params=params)
         except RequestException:
             self.logger.error("PIN Request Error connecting to Ecobee.  Possible connectivity outage.")
-            return valuesDict
+            return None
             
         if request.status_code == requests.codes.ok:
             self.authorization_code = request.json()['code']
-            self.pin = request.json()['ecobeePin']
-            valuesDict['pin'] = self.pin
-            self.logger.debug("PIN Request OK, pin = {}. authorization_code = {}".format(self.pin, self.authorization_code))
-        else:
-            self.logger.error("PIN Request failed, Ecobee servers returned error code {}, text = {}".format(request.status_code, request.text))
+            pin = request.json()['ecobeePin']
+            self.logger.debug("PIN Request OK, pin = {}. authorization_code = {}".format(pin, self.authorization_code))
+            return pin
             
-        return valuesDict
+        else:
+            error = request.json()['error']
+            error_description = request.json()['error_description']
+            self.logger.error("PIN Request failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            return None
 
-    # Authentication Step 3, called from PluginConfig.xml
-    def get_tokens(self, valuesDict = None):
+    # Authentication Step 3
+    def get_tokens(self):
     
-        valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = ''
-        valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = ''
-
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': self.api_key}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except RequestException:
             self.logger.error("Token Request Error connecting to Ecobee.  Possible connectivity outage.")
             self.authenticated = False
-            return valuesDict
+            return
             
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = self.access_token
-            valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = self.refresh_token
-            valuesDict['pin'] = ''
             self.logger.debug("Token Request OK, access_token = {}. refresh_token = {}".format(self.access_token, self.refresh_token))
             self.authenticated = True
         else:
-            self.logger.error("Token Request failed, Ecobee servers returned error code {}, text = {}".format(request.status_code, request.text))
+            error = request.json()['error']
+            error_description = request.json()['error_description']
+            self.logger.error("Token Request failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
             self.authenticated = False
-            
-        return valuesDict
 
 
     # called from __init__ or main loop to refresh the access tokens
@@ -146,13 +135,13 @@ class EcobeeAccount:
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            indigo.activePlugin.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.access_token
-            indigo.activePlugin.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.refresh_token
             self.logger.debug("Token Refresh OK, access_token = {}. refresh_token = {}".format(self.access_token, self.refresh_token))
             self.authenticated = True
            
         else:
-            self.logger.error("Token Refresh failed, Ecobee servers returned error code {}, text = {}".format(request.status_code, request.text))
+            error = request.json()['error']
+            error_description = request.json()['error_description']
+            self.logger.error("Token Refresh failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
             self.authenticated = False
 
         
@@ -185,7 +174,9 @@ class EcobeeAccount:
             self.serverData = request.json()['thermostatList']
             self.logger.threaddebug("Thermostat Update OK, got info on {} devices".format(len(self.serverData)))
         else:
-            self.logger.error("Thermostat Update failed, Ecobee servers returned error code {}, text = {}".format(request.status_code, request.text))
+            error = request.json()['error']
+            error_description = request.json()['error_description']
+            self.logger.error("Thermostat Update failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
 
 
     def make_request(self, body, log_msg_action):
@@ -203,7 +194,9 @@ class EcobeeAccount:
             self.logger.threaddebug("API '{}' request completed, result = {}".format(log_msg_action, request))
             return request
         else:
-            self.logger.error("API Error while attempting to {}. Ecobee servers returned error code = {}, text = {}.".format(log_msg_action, request.status_code, request.text))
+            error = request.json()['error']
+            error_description = request.json()['error_description']
+            self.logger.error("API Error while attempting to {}. Error code {}, error '{}', description '{}'.".format(log_msg_action, request.status_code, error, error_description))
             return None
 
     def set_hvac_mode(self, id, hvac_mode):
