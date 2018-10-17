@@ -364,7 +364,7 @@ class Plugin(indigo.PluginBase):
         climate = action.props.get("climate")
 
         sendSuccess = False
-        if self.set_climate_hold(dev.pluginProps["address"], climate) :
+        if self.ecobee.set_climate_hold(dev.pluginProps["address"], climate) :
             sendSuccess = True;
             if sendSuccess:
                 self.logger.info(u"sent set_climate_hold to %s" % dev.address)
@@ -405,7 +405,7 @@ class Plugin(indigo.PluginBase):
 
         sendSuccess = False
 
-        if self.set_hvac_mode(dev.pluginProps["address"], hvac_mode):
+        if self.ecobee.set_hvac_mode(dev.pluginProps["address"], hvac_mode):
             sendSuccess = True
 
         if sendSuccess:
@@ -436,12 +436,12 @@ class Plugin(indigo.PluginBase):
 
         if stateKey == u"setpointCool":
             self.logger.info('set cool to: {} and leave heat at: {}'.format(reportedNewSetpoint,reportedHSP))
-            if self.set_hold_temp(dev.address, newSetpoint, dev.heatSetpoint):
+            if self.ecobee.set_hold_temp(dev.address, newSetpoint, dev.heatSetpoint):
                 sendSuccess = True
 
         elif stateKey == u"setpointHeat":
             self.logger.info('set heat to: {} and leave cool at: {}'.format(reportedNewSetpoint,reportedCSP))
-            if self.set_hold_temp(dev.address, dev.coolSetpoint, newSetpoint):
+            if self.ecobee.set_hold_temp(dev.address, dev.coolSetpoint, newSetpoint):
                 sendSuccess = True      # Set to False if it failed.
 
         if sendSuccess:
@@ -469,7 +469,7 @@ class Plugin(indigo.PluginBase):
 
         if newFanMode == u"on":
             self.logger.info('leave cool at: {0} and leave heat at: {1} and set fan to ON'.format(reportedCSP,reportedHSP))
-            if self.set_hold_temp_with_fan(dev.address, dev.coolSetpoint, dev.heatSetpoint):
+            if self.ecobee.set_hold_temp_with_fan(dev.address, dev.coolSetpoint, dev.heatSetpoint):
                 sendSuccess = True
 
         if newFanMode == u"auto":

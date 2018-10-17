@@ -148,9 +148,8 @@ class EcobeeAccount:
 #
 #   Ecobee API functions
 #
-
         
-#   Do the actual request of all data from the Ecobee servers.
+#   Request all thermostat data from the Ecobee servers.
 
     def server_update(self):
     
@@ -178,6 +177,7 @@ class EcobeeAccount:
             error_description = request.json()['error_description']
             self.logger.error("Thermostat Update failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
 
+#   Generic routine for other API calls
 
     def make_request(self, body, log_msg_action):
         url = 'https://api.ecobee.com/1/thermostat'

@@ -199,7 +199,6 @@ class EcobeeRemoteSensor(EcobeeBase):
         self.name = matchedSensor.get('name')
 
         try:
-            self._update_server_temperature(matchedSensor, u'temperature')
             self._update_server_temperature(matchedSensor, u'sensorValue')
         except ValueError:
             self.logger.error("%s: couldn't format temperature value; is the sensor alive?" % self.name)
