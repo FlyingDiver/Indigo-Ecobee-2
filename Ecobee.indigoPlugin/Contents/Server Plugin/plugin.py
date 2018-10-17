@@ -167,22 +167,25 @@ class Plugin(indigo.PluginBase):
 
     def updateAllDevices(self):
         try:
-            for ers in self.active_remote_sensors:
-                ers.update()
+            for devID, dev in self.active_remote_sensors.items():
+                self.logger.debug(u"{}: Updating remote sensor".format(dev.name))
+                dev.update()
         except:
-            self.logger.warning(u"Error updating remote sensors")
+            self.logger.exception(u"Error updating remote sensors")
         
         try:
-            for t in self.active_thermostats:
-                t.update()
+            for devID, dev in self.active_thermostats.items():
+                self.logger.debug(u"{}: Updating thermostat".format(dev.name))
+                dev.update()
         except:
-            self.logger.warning(u"Error updating thermostats")
+            self.logger.exception(u"Error updating thermostats")
         
         try:
-            for st in self.active_smart_thermostats:
-                st.update()
+            for devID, dev in self.active_smart_thermostats.items():
+                self.logger.debug(u"{}: Updating smart thermostat".format(dev.name))
+                dev.update()
         except:
-            self.logger.warning(u"Error updating smart thermostats")
+            self.logger.exception(u"Error updating smart thermostats")
         
     ########################################
 
@@ -237,7 +240,7 @@ class Plugin(indigo.PluginBase):
 
             dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
             self.active_remote_sensors[dev.id] = EcobeeRemoteSensor(dev, self.ecobee)
-            self.logger.debug("Added {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
+            self.logger.debug("Starting {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
 
         elif dev.deviceTypeId == 'EcobeeThermostat':
 
@@ -248,7 +251,7 @@ class Plugin(indigo.PluginBase):
             dev.replacePluginPropsOnServer(newProps)
 
             self.active_thermostats[dev.id] = EcobeeThermostat(dev, self.ecobee)
-            self.logger.info("debug {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
+            self.logger.info("Starting {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
 
         elif dev.deviceTypeId == 'EcobeeSmartThermostat':
 
@@ -258,7 +261,7 @@ class Plugin(indigo.PluginBase):
             dev.replacePluginPropsOnServer(newProps)
 
             self.active_smart_thermostats[dev.id] = EcobeeSmartThermostat(dev, self.ecobee)
-            self.logger.info("debug {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
+            self.logger.info("Starting {} {} ({})".format(dev.deviceTypeId, dev.name, dev.pluginProps["address"]))
 
         else:
             self.logger.error("Unknown Ecobee device type: {}".format(dev.deviceTypeId))

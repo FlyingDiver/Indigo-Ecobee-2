@@ -32,7 +32,8 @@ class EcobeeBase:
         self.ecobee = ecobee
         self.name = self.address # temporary name until we get the real one from the server
 
-    def get_capability(obj, cname):
+    def get_capability(self, obj, cname):
+        ret = None
         ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
         return ret
 
@@ -87,7 +88,7 @@ class EcobeeThermostat(EcobeeBase):
             self.logger.debug("update: no thermostat found for address {}".format(self.address))
             return
 
-        self.logger.debug("update: thermostat {} -\n{}".format(self.address, thermostat))
+        self.logger.threaddebug("update: thermostat {} -\n{}".format(self.address, thermostat))
             
         runtime = thermostat.get('runtime')
         hsp = runtime.get('desiredHeat')
@@ -114,6 +115,8 @@ class EcobeeThermostat(EcobeeBase):
             if 'thermostat' == rs.get('type')
         ][0]
 
+        self.logger.debug('matched sensor: {}'.format(matchedSensor))
+
         self.name = matchedSensor.get('name')
 
         self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
@@ -123,6 +126,7 @@ class EcobeeThermostat(EcobeeBase):
 
         # humidity
         humidityCapability = self.get_capability(matchedSensor, 'humidity')
+        self.logger.debug('humidityCapability: {}'.format(humidityCapability))
         self.dev.updateStateOnServer(key="humidityInput1", value=float(humidityCapability.get('value')))
 
         EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
