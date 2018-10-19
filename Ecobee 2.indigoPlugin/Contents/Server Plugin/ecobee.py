@@ -18,7 +18,7 @@ class EcobeeAccount:
         self.api_key = api_key
         
         if refresh_token:
-            self.logger.debug("EcobeeAccount __init__, using old refresh token = {}".format(refresh_token))
+            self.logger.debug("EcobeeAccount __init__, using refresh token = {}".format(refresh_token))
             self.refresh_token = refresh_token
             self.do_token_refresh()
             
@@ -132,9 +132,8 @@ class EcobeeAccount:
         params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': self.api_key}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
-        except RequestException:
+        except requests.RequestException:
             self.logger.error("Token Refresh Error connecting to Ecobee.  Possible connectivity outage.")
-            self.authenticated = False
             return
             
         if request.status_code == requests.codes.ok:

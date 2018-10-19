@@ -9,8 +9,8 @@ from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeSmartThermostat, 
 
 import temperature_scale
 
-REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
-ACCESS_TOKEN_PLUGIN_PREF='accessToken'
+REFRESH_TOKEN_PLUGIN_PREF='refreshToken-'
+ACCESS_TOKEN_PLUGIN_PREF='accessToken-'
 TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 
 API_KEY = "rzQZSWoFdELWHGfATFJEzrfYs1rccT9h"
@@ -71,18 +71,9 @@ class Plugin(indigo.PluginBase):
         self.next_update = time.time() + self.updateFrequency
         
         self.triggers = {}
-        self.authenticated = False
-
         self.active_devices = {}
-
-        # create the Ecobee account object.  It will attempt to refresh the auth token.
-        self.ecobee = EcobeeAccount(API_KEY, refresh_token = self.pluginPrefs.get(REFRESH_TOKEN_PLUGIN_PREF, None))
-        if self.ecobee.authenticated:
-            self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
-            self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
-        else:
-            self.logger.error('Ecobee plugin requires authentication; open plugin configuration page for info')
-
+        self.ecobee_accounts = {}
+        
         if TEMPERATURE_SCALE_PLUGIN_PREF in self.pluginPrefs:
             self._setTemperatureScale(self.pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF][0])
         else:
@@ -122,34 +113,6 @@ class Plugin(indigo.PluginBase):
             self.logger.debug(u"updateFrequency = " + str(self.updateFrequency))
             self.next_update = time.time()
 
-
-    # Authentication Step 1, called from PluginConfig.xml
-    def request_pin(self, valuesDict):
-        pin = self.ecobee.request_pin()
-        if pin:
-            valuesDict["pin"] = pin
-            valuesDict["authStatus"] = "PIN Request OK"
-        else:
-            valuesDict["authStatus"] = "PIN Request Failed"
-        return valuesDict
-
-    # Authentication Step 2, called from PluginConfig.xml
-    def open_browser_to_ecobee(self, valuesDict = None):
-        self.browserOpen("http://www.ecobee.com")
-
-    # Authentication Step 3, called from PluginConfig.xml
-    def get_tokens(self, valuesDict):
-        valuesDict["pin"] = ''
-        self.ecobee.get_tokens()
-        if self.ecobee.authenticated:
-            valuesDict["authStatus"] = "Authenticated"
-            self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
-            self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
-            self.logger.debug("Token Request OK, access_token = {}. refresh_token = {}".format(self.ecobee.access_token, self.ecobee.refresh_token))
-        else:
-            valuesDict["authStatus"] = "Token Request Failed"
-        return valuesDict
-
     ########################################
         
     def runConcurrentThread(self):
@@ -159,25 +122,25 @@ class Plugin(indigo.PluginBase):
                 # Update from Ecobee servers as scheduled
                 
                 if time.time() > self.next_update:
-                    if self.ecobee.authenticated:
-                        self.ecobee.server_update()
-                        for devID, dev in self.active_devices.items():
-                            dev.update()
-                    else:
-                        self.logger.error('Ecobee plugin requires authentication; open plugin configuration page for info')
+                    for accountID in self.ecobee_accounts:
+                        if self.ecobee_accounts[accountID].authenticated:
+                            self.ecobee_accounts[accountID].server_update()
+                    for devID, dev in self.active_devices.items():
+                        dev.update()
                     
                     self.next_update = time.time() + self.updateFrequency
 
                 # Refresh the auth token as needed.  Refresh interval is calculated during the refresh
                 
-                if time.time() > self.ecobee.next_refresh:
-                    if self.ecobee.authenticated:
-                        self.ecobee.do_token_refresh()                    
-                        self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
-                        self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
+                for accountID in self.ecobee_accounts:
+                    if time.time() > self.ecobee_accounts[accountID].next_refresh:
+                        if self.ecobee_accounts[accountID].authenticated:
+                            self.ecobee_accounts[accountID].do_token_refresh()                    
+                            self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF + str(accountID)] = self.ecobee_accounts[accountID].access_token
+                            self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = self.ecobee_accounts[accountID].refresh_token
 
                     
-                self.sleep(1.0)
+                self.sleep(60.0)
 
         except self.StopThread:
             pass
@@ -207,6 +170,12 @@ class Plugin(indigo.PluginBase):
     #
     # callbacks from device creation UI
     #
+
+    def get_account_list(self, filter="", valuesDict=None, typeId="", targetId=0):
+        return [
+            ()
+            for accountID in self.ecobee_accounts:
+        ]
     
     def get_thermostat_list(self, filter="", valuesDict=None, typeId="", targetId=0):
         return [
@@ -229,9 +198,20 @@ class Plugin(indigo.PluginBase):
 
         self.logger.info("Starting {} Device - {} ({})".format(dev.deviceTypeId, dev.name, dev.id))
 
-        if dev.deviceTypeId == 'ecobeeAccount':
-            pass
+        if dev.deviceTypeId == 'EcobeeAccount':
+        
+            # create the Ecobee account object.  It will attempt to refresh the auth token.
+            
+            ecobeeAccount = EcobeeAccount(API_KEY, refresh_token = self.pluginPrefs.get(REFRESH_TOKEN_PLUGIN_PREF + str(dev.id), None))
 
+            self.ecobee_accounts[dev.id] = ecobeeAccount
+            
+            dev.updateStateOnServer(key="authenticated", value=ecobeeAccount.authenticated)
+
+            if ecobeeAccount.authenticated:
+                self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF + str(dev.id)] = ecobeeAccount.access_token
+                self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(dev.id)] = ecobeeAccount.refresh_token
+        
         elif dev.deviceTypeId == 'EcobeeRemoteSensor':
 
             newProps = dev.pluginProps
@@ -274,7 +254,7 @@ class Plugin(indigo.PluginBase):
             dev.replaceOnServer()
 
         else:
-            self.logger.error("Unknown Ecobee device type: {}".format(dev.deviceTypeId))
+            self.logger.error("deviceStartComm: Unknown Ecobee device type: {}".format(dev.deviceTypeId))
 
 
     def deviceStopComm(self, dev):
@@ -285,6 +265,40 @@ class Plugin(indigo.PluginBase):
             assert dev.id in self.active_devices
             del self.active_devices[dev.id]
  
+        elif dev.deviceTypeId == 'EcobeeAccount':
+            assert dev.id in self.ecobee_accounts
+            del self.ecobee_accounts[dev.id]
+            
+        else:
+            self.logger.error("deviceStopComm: Unknown Ecobee device type: {}".format(dev.deviceTypeId))
+        
+         
+    # Authentication Step 1, called from Devices.xml
+    def request_pin(self, valuesDict, typeId, devId):
+        self.temp_ecobeeAccount = EcobeeAccount(API_KEY, None)
+        pin = self.temp_ecobeeAccount.request_pin()
+        if pin:
+            valuesDict["pin"] = pin
+            valuesDict["authStatus"] = "PIN Request OK"
+        else:
+            valuesDict["authStatus"] = "PIN Request Failed"
+        return valuesDict
+
+    # Authentication Step 2, called from Devices.xml
+    def open_browser_to_ecobee(self, valuesDict, typeId, devId):
+        self.browserOpen("https://www.ecobee.com/consumerportal/")
+
+    # Authentication Step 3, called from Devices.xml
+    def get_tokens(self, valuesDict, typeId, devId):
+        valuesDict["pin"] = ''
+        self.temp_ecobeeAccount.get_tokens()
+        if self.temp_ecobeeAccount.authenticated:
+            valuesDict["authStatus"] = "Authenticated"
+            self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF + str(devId)] = self.temp_ecobeeAccount.access_token
+            self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(devId)] = self.temp_ecobeeAccount.refresh_token
+        else:
+            valuesDict["authStatus"] = "Token Request Failed"
+        return valuesDict
 
 
     ########################################

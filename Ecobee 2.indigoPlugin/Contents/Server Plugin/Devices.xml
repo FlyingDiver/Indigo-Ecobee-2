@@ -3,6 +3,36 @@
 
     <Device type="custom" id="EcobeeAccount">
         <Name>Ecobee User Account</Name>
+        <ConfigUI>
+            <Field id="getPin" type="button">
+                <Label>1. Get an Ecobee PIN:</Label>
+                <Title>Get PIN</Title>
+                <CallbackMethod>request_pin</CallbackMethod>
+            </Field>
+ 
+            <Field id="pin" type="textfield" readonly="true">
+                <Label>PIN:</Label>
+            </Field>
+ 
+            <Field id="openEcobee" type="button">
+                <Label>2. Register the PIN:</Label>
+                <Title>Open http://www.ecobee.com</Title>
+                <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
+            </Field>
+ 
+            <Field id="getTokens" type="button">
+                <Label>3. Authenticate:</Label>
+                <Title> GO </Title>
+                <CallbackMethod>get_tokens</CallbackMethod>
+            </Field>
+
+            <Field id="separator2" type="separator"/>
+ 
+            <Field id="authStatus" type="textfield" readonly="true">
+                <Label>Authentication Status:</Label>
+            </Field>
+        </ConfigUI>
+ 
         <States>
             <State id="authenticated" readonly="true">
                 <ValueType boolType="YesNo">Boolean</ValueType>
@@ -15,6 +45,9 @@
     <Device type="thermostat" id="EcobeeThermostat">
         <Name>Ecobee 3 , 3 lite, 4</Name>
         <ConfigUI>
+            <Field id="account" type="menu">
+                <List class="self" method="get_account_list"/>
+            </Field>
             <Field id="address" type="menu">
                 <List class="self" method="get_thermostat_list"/>
             </Field>

@@ -31,34 +31,4 @@
     </List>
   </Field>
  
-  <Field id="separator1" type="separator"/>
- 
-  <Field id="getPin" type="button">
-    <Label>1. Get an Ecobee PIN:</Label>
-    <Title>Get PIN</Title>
-    <CallbackMethod>request_pin</CallbackMethod>
-  </Field>
- 
-  <Field id="pin" type="textfield" readonly="true">
-    <Label>PIN:</Label>
-  </Field>
- 
-  <Field id="openEcobee" type="button">
-    <Label>2. Register the PIN:</Label>
-    <Title>Open http://www.ecobee.com</Title>
-    <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
-  </Field>
- 
-  <Field id="getTokens" type="button">
-    <Label>3. Authenticate:</Label>
-    <Title> GO </Title>
-    <CallbackMethod>get_tokens</CallbackMethod>
-  </Field>
- 
-  <Field id="separator2" type="separator"/>
- 
-  <Field id="authStatus" type="textfield" readonly="true">
-    <Label>Authentication Status:</Label>
-  </Field>
- 
 </PluginConfig>
