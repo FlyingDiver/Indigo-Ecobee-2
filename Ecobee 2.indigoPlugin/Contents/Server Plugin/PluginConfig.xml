@@ -12,10 +12,9 @@
     </List>
   </Field>
   
-  <Field id="updateFrequency" type="textfield" defaultValue="60">
+  <Field id="updateFrequency" type="textfield" defaultValue="15">
     <Label>Update frequency (minutes):</Label>
   </Field>
- 
   <Field id="statusNote" type="label" fontSize="small" fontColor="darkgray">
     <Label>Minimum update interval is 5 minutes.  Default is 15.</Label>
   </Field>

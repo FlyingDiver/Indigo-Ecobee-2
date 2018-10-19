@@ -9,7 +9,8 @@
      backlightBrightness state added to Devices.xml.
 -->
 <Actions>
-    <Action id="resumeProgram" deviceFilter="self">
+
+    <Action id="resumeProgram" deviceFilter="self.EcobeeThermostat,self.EcobeeSmartThermostat">
         <Name>Resume Set Program</Name>
         <CallbackMethod>actionResumeProgram</CallbackMethod>
         <ConfigUI>
@@ -18,7 +19,8 @@
             </Field>
         </ConfigUI>
     </Action>
-    <Action id="activateComfortSetting" deviceFilter="self">
+    
+    <Action id="activateComfortSetting" deviceFilter="self.EcobeeThermostat,self.EcobeeSmartThermostat">
         <Name>Activate Comfort Setting</Name>
         <CallbackMethod>actionActivateComfortSetting</CallbackMethod>
         <ConfigUI>
@@ -28,4 +30,5 @@
             </Field>
         </ConfigUI>
     </Action>
+    
 </Actions>

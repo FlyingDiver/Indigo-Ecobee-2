@@ -7,5 +7,16 @@
 -->
 
 <MenuItems>
+    <MenuItem id="menu1">
+        <Name>Resume Set Program</Name>
+        <CallbackMethod>menuResumeProgram</CallbackMethod>
+        <ButtonTitle>Clear Queue</ButtonTitle>
+        <ConfigUI>
+            <Field id="targetDevice" type="menu">
+                <Label>Thermostat to resume:</Label>
+                <List class="self" filter="" method="pickThermostat" dynamicReload="true"/>
+            </Field>
+        </ConfigUI>
+    </MenuItem>
 </MenuItems>
 

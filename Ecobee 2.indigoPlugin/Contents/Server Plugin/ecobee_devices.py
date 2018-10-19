@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-import json
 import indigo
 import temperature_scale
 import logging
@@ -30,7 +28,7 @@ class EcobeeBase:
         self.dev = dev
         self.address = dev.pluginProps["address"]
         self.ecobee = ecobee
-        self.name = self.address # temporary name until we get the real one from the server
+#        self.name = self.address # temporary name until we get the real one from the server
                 
         
     def get_capability(self, obj, cname):
@@ -50,13 +48,10 @@ class EcobeeBase:
 
     def _update_server_temperature(self, matchedSensor, stateKey):
         tempCapability = self.get_capability(matchedSensor, 'temperature')
-        self.logger.debug('Sensor Temp: %s' % tempCapability.get('value'))
         return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
-        return temperature
 
     def _update_server_smart_temperature(self, ActualTemp, stateKey):
         return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, ActualTemp)
-        return temperature
 
     def _update_server_occupancy(self, matchedSensor):
         try:
@@ -71,11 +66,12 @@ class EcobeeBase:
     def _update_server_fanMinOnTime(self, matchedSensor, stateKey, stateVal):
         self.dev.updateStateOnServer(stateKey, value=stateVal)
 
+
+## This is for the Ecobee3 generation and later of products with occupancy detection and remote RF sensors
+
 class EcobeeThermostat(EcobeeBase):
-    ## This is for the Ecobee3 generation and later of products with occupancy detection and remote RF sensors
 
     def update(self):
-        self.logger.debug("updating Ecobee3/4 thermostat from server")
 
         if not self.updatable():
             return
@@ -140,11 +136,11 @@ class EcobeeThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="autoAway", value=bool(latestEventType and ('autoAway' in latestEventType)))
 
 
+## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
+
 class EcobeeSmartThermostat(EcobeeBase):
-    ## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
 
     def update(self):
-        self.logger.debug("updating Ecobee Smart/Si thermostat from server")
 
         if not self.updatable():
             return
@@ -186,10 +182,11 @@ class EcobeeSmartThermostat(EcobeeBase):
         self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
 
 
+## All Remote Sensors
+
 class EcobeeRemoteSensor(EcobeeBase):
 
     def update(self):
-        self.logger.debug("updating Ecobee Remote Sensor from server")
 
         if not self.updatable():
             return
@@ -206,7 +203,9 @@ class EcobeeRemoteSensor(EcobeeBase):
 
         # if occupancy was detected, set the icon to show a 'tripped' motion sensor;
         # otherwise, just show the thermometer for the temperature sensor
-        if self._update_server_occupancy(matchedSensor):
+        occupied = self._update_server_occupancy(matchedSensor)
+        self.dev.updateStateOnServer(key="onOffState", value=occupied)
+        if occupied:
             self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
         else:
             self.dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)

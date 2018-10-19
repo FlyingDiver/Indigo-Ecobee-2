@@ -1,6 +1,7 @@
 import requests
 import json
 import logging
+import time
 
 #
 # All interactions with the Ecobee servers are encapsulated in this class
@@ -12,12 +13,14 @@ class EcobeeAccount:
         self.logger = logging.getLogger("Plugin.EcobeeAccount")
         self.serverData = None
         self.authenticated = False
+        self.next_refresh = time.time()
         
         self.api_key = api_key
         
         if refresh_token:
+            self.logger.debug("EcobeeAccount __init__, using old refresh token = {}".format(refresh_token))
             self.refresh_token = refresh_token
-            self.refresh_tokens()
+            self.do_token_refresh()
             
         if self.authenticated:
             self.server_update()
@@ -106,7 +109,9 @@ class EcobeeAccount:
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            self.logger.debug("Token Request OK, access_token = {}. refresh_token = {}".format(self.access_token, self.refresh_token))
+            expires_in = request.json()['expires_in']
+            self.logger.debug("Token Request OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
+            self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
         else:
             error = request.json()['error']
@@ -117,7 +122,7 @@ class EcobeeAccount:
 
     # called from __init__ or main loop to refresh the access tokens
 
-    def refresh_tokens(self):
+    def do_token_refresh(self):
         if not self.refresh_token:
             self.authenticated = False
             return
@@ -135,9 +140,11 @@ class EcobeeAccount:
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            self.logger.debug("Token Refresh OK, access_token = {}. refresh_token = {}".format(self.access_token, self.refresh_token))
+            expires_in = request.json()['expires_in']
+            self.logger.debug("Token Refresh OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
+            self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
-           
+            
         else:
             error = request.json()['error']
             error_description = request.json()['error_description']
@@ -171,7 +178,7 @@ class EcobeeAccount:
             
         if request.status_code == requests.codes.ok:
             self.serverData = request.json()['thermostatList']
-            self.logger.threaddebug("Thermostat Update OK, got info on {} devices".format(len(self.serverData)))
+            self.logger.debug("Thermostat Update OK, got info on {} devices".format(len(self.serverData)))
         else:
             error = request.json()['error']
             error_description = request.json()['error_description']
