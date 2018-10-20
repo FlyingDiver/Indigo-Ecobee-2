@@ -22,29 +22,38 @@ FAN_MODE_MAP = {
 class EcobeeBase:
     temperatureFormatter = temperature_scale.Fahrenheit()
 
-    def __init__(self, dev, ecobee):
+    def __init__(self, dev):
         self.logger = logging.getLogger('Plugin.ecobee_devices')
         
         self.dev = dev
         self.address = dev.pluginProps["address"]
-        self.ecobee = ecobee
-#        self.name = self.address # temporary name until we get the real one from the server
+        self.ecobee = None
                 
         
-    def get_capability(self, obj, cname):
-        ret = None
-        ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
-        return ret
-
     def updatable(self):
         if not self.dev.configured:
             self.logger.debug('device %s not fully configured yet; not updating state' % self.address)
             return False
-        if not self.ecobee.authenticated:
-            self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device %s' % self.address)
-            return False
+            
+        # has the Ecobee account been initialized yet?
+        if not self.ecobee:
+            try:
+                accountID = int(self.dev.pluginProps["account"])
+                self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+            except:
+                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                return False
+            
+            if not self.ecobee.authenticated:
+                self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device %s' % self.address)
+                return False
 
         return True
+
+    def get_capability(self, obj, cname):
+        ret = None
+        ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
+        return ret
 
     def _update_server_temperature(self, matchedSensor, stateKey):
         tempCapability = self.get_capability(matchedSensor, 'temperature')
