@@ -10,17 +10,17 @@
 -->
 <Actions>
 
-    <Action id="resumeProgram" deviceFilter="self.EcobeeThermostat,self.EcobeeSmartThermostat">
-        <Name>Resume Set Program</Name>
+    <Action id="resumeProgram" deviceFilter="self, props.IsThermostat">
+        <Name>Resume Program</Name>
         <CallbackMethod>actionResumeProgram</CallbackMethod>
-        <ConfigUI>
-            <Field id="resume_all" type="checkbox" defaultValue="false">
-                <Label>Resume All Holds:</Label>
-            </Field>
-        </ConfigUI>
     </Action>
     
-    <Action id="activateComfortSetting" deviceFilter="self.EcobeeThermostat,self.EcobeeSmartThermostat">
+    <Action id="resumeAllPrograms">
+        <Name>Resume All Programs</Name>
+        <CallbackMethod>actionResumeAllPrograms</CallbackMethod>
+    </Action>
+    
+    <Action id="activateComfortSetting" deviceFilter="self, props.IsThermostat">
         <Name>Activate Comfort Setting</Name>
         <CallbackMethod>actionActivateComfortSetting</CallbackMethod>
         <ConfigUI>

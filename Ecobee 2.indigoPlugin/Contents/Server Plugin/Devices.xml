@@ -45,6 +45,7 @@
     <Device type="thermostat" id="EcobeeThermostat">
         <Name>Ecobee 3 , 3 lite, 4</Name>
         <ConfigUI>
+			<Field id="IsThermostat" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="account" type="menu">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
@@ -57,6 +58,11 @@
             </Field>
         </ConfigUI>
         <States>
+            <State id="modelNumber">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Model</TriggerLabel>
+                <ControlPageLabel>Model</ControlPageLabel>
+            </State>
             <State id="climate">
                 <ValueType>String</ValueType>
                 <TriggerLabel>Climate</TriggerLabel>
@@ -88,6 +94,7 @@
     <Device type="thermostat" id="EcobeeSmartThermostat">
         <Name>Ecobee 'Smart', 'Smart Si'</Name>
         <ConfigUI>
+			<Field id="IsThermostat" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="account" type="menu">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
@@ -100,6 +107,11 @@
             </Field>
         </ConfigUI>
         <States>
+            <State id="modelNumber">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Model</TriggerLabel>
+                <ControlPageLabel>Model</ControlPageLabel>
+            </State>
             <State id="climate">
                 <ValueType>String</ValueType>
                 <TriggerLabel>Climate</TriggerLabel>
