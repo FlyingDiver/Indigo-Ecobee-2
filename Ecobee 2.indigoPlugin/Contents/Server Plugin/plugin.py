@@ -12,7 +12,7 @@ REFRESH_TOKEN_PLUGIN_PREF='refreshToken-'
 ACCESS_TOKEN_PLUGIN_PREF='accessToken-'
 TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 
-API_KEY = "rzQZSWoFdELWHGfATFJEzrfYs1rccT9h"
+API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"
 
 TEMP_FORMATTERS = {
     'F': temperature_scale.Fahrenheit(),
