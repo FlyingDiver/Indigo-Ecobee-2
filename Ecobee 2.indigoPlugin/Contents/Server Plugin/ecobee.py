@@ -143,9 +143,8 @@ class EcobeeAccount:
             self.authenticated = True
             
         else:
-            error = request.json()['error']
-            error_description = request.json()['error_description']
-            self.logger.error("Token Refresh failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            self.logger.error("Token Refresh failed, response = '{}'".format(request.text))                
+            self.next_refresh = time.time() + 300.0         # try every five minutes
             self.authenticated = False
 
         
@@ -177,9 +176,14 @@ class EcobeeAccount:
             self.serverData = request.json()['thermostatList']
             self.logger.debug("Thermostat Update OK, got info on {} devices".format(len(self.serverData)))
         else:
-            error = request.json()['error']
-            error_description = request.json()['error_description']
-            self.logger.error("Thermostat Update failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            try:
+                error = request.json()['error']
+                error_description = request.json()['error_description']
+            except:
+                self.logger.error("Thermostat Update failed, response = '{}'".format(request.text))                
+            else:
+                self.logger.error("Thermostat Update failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+
 
 #   Generic routine for other API calls
 

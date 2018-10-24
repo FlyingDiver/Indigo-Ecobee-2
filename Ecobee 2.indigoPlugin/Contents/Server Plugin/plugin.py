@@ -147,7 +147,7 @@ class Plugin(indigo.PluginBase):
                             self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = account.refresh_token
 
                     
-                self.sleep(60.0)
+                self.sleep(1.0)
 
         except self.StopThread:
             pass
@@ -180,29 +180,30 @@ class Plugin(indigo.PluginBase):
     ########################################
 
     def get_account_list(self, filter="", valuesDict=None, typeId="", targetId=0):
+        self.logger.debug("get_account_list: typeId = {}, targetId = {}, valuesDict = {}".format(typeId, targetId, valuesDict))
         return [
-            (account.dev.id, account.dev.name)
+            (account.dev.id, indigo.devices[account.dev.id].name)
             for account in self.ecobee_accounts.values()
         ]
     
 
     def get_thermostat_list(self, filter="", valuesDict=None, typeId="", targetId=0):
-        self.logger.debug("get_thermostat_list: typeId = {}, valuesDict = {}".format(typeId, valuesDict))
+        self.logger.debug("get_thermostat_list: typeId = {}, targetId = {}, valuesDict = {}".format(typeId, targetId, valuesDict))
 
         if "account" not in valuesDict:
             return []
+            
         try:
             ecobee = self.ecobee_accounts[int(valuesDict["account"])]
         except:
-            self.logger.debug("get_thermostat_list: error accessing ecobee account")
-        
+            self.logger.error("get_thermostat_list: error accessing ecobee account")
+            return []
+            
         all_stats = [
             (th.get('identifier'), th.get('name'))
             for th in ecobee.get_thermostats()
         ]
         self.logger.debug("get_thermostat_list: all_stats = {}".format(all_stats))
-
-        self.logger.debug("get_thermostat_list: active_devices = {}".format(self.active_devices))
         
         active_stats =  [
             (indigo.devices[dev].pluginProps["address"])
@@ -214,12 +215,20 @@ class Plugin(indigo.PluginBase):
         for iden, name in all_stats:
             if iden not in active_stats:
                 filtered_stats.append((iden, name))
+        
+        if targetId:
+            try:
+                dev = indigo.devices[targetId]
+                filtered_stats.insert(0, (dev.pluginProps["address"], dev.name))
+            except:
+                pass
+                
         self.logger.debug("get_thermostat_list: filtered_stats = {}".format(filtered_stats))
         return filtered_stats
 
 
     def get_remote_sensor_list(self, filter="", valuesDict=None, typeId="", targetId=0):
-        self.logger.debug("get_remote_sensor_list: typeId = {}, valuesDict = {}".format(typeId, valuesDict))
+        self.logger.debug("get_remote_sensor_list: typeId = {}, targetId = {}, valuesDict = {}".format(typeId, targetId, valuesDict))
 
         if "account" not in valuesDict:
             return []
@@ -241,13 +250,21 @@ class Plugin(indigo.PluginBase):
             (indigo.devices[dev].pluginProps["address"])
             for dev in self.active_devices
         ]
-        self.logger.debug("get_thermostat_list: active_sensors = {}".format(active_sensors))
+        self.logger.debug("get_remote_sensor_list: active_sensors = {}".format(active_sensors))
 
         filtered_sensors =[]
         for iden, name in all_sensors:
             if iden not in active_sensors:
                 filtered_sensors.append((iden, name))
-        self.logger.debug("get_thermostat_list: filtered_sensors = {}".format(filtered_sensors))
+
+        if targetId:
+            try:
+                dev = indigo.devices[targetId]
+                filtered_sensors.insert(0, (dev.pluginProps["address"], dev.name))
+            except:
+                pass
+
+        self.logger.debug("get_remote_sensor_list: filtered_sensors = {}".format(filtered_sensors))
         return filtered_sensors
 
      
@@ -263,6 +280,19 @@ class Plugin(indigo.PluginBase):
         
 
     ########################################
+
+    def getDeviceConfigUiValues(self, pluginProps, typeId, devId):
+        valuesDict = indigo.Dict(pluginProps)
+        errorsDict = indigo.Dict()
+        self.logger.debug("getDeviceConfigUiValues, typeID = {}, valuesDict = {}".format(typeId, valuesDict))
+
+        if len(valuesDict) == 0:
+            self.logger.debug("getDeviceConfigUiValues: no values")
+        else:
+            self.logger.debug("getDeviceConfigUiValues: no change, already populated")
+
+        return (valuesDict, errorsDict)
+
 
     def deviceStartComm(self, dev):
 
@@ -340,9 +370,10 @@ class Plugin(indigo.PluginBase):
             self.logger.error(u"{}: deviceStopComm error, unknown device type: {}".format(dev.name, dev.deviceTypeId))
         
          
-    # Authentication Step 1, called from Devices.xml
+#    Authentication Step 1, called from Devices.xml
+
     def request_pin(self, valuesDict, typeId, devId):
-        self.temp_ecobeeAccount = EcobeeAccount(API_KEY, None)
+        self.temp_ecobeeAccount = EcobeeAccount(None, API_KEY, None)
         pin = self.temp_ecobeeAccount.request_pin()
         if pin:
             valuesDict["pin"] = pin
@@ -351,11 +382,13 @@ class Plugin(indigo.PluginBase):
             valuesDict["authStatus"] = "PIN Request Failed"
         return valuesDict
 
-    # Authentication Step 2, called from Devices.xml
+#    Authentication Step 2, called from Devices.xml
+
     def open_browser_to_ecobee(self, valuesDict, typeId, devId):
         self.browserOpen("https://www.ecobee.com/consumerportal/")
 
-    # Authentication Step 3, called from Devices.xml
+#    Authentication Step 3, called from Devices.xml
+
     def get_tokens(self, valuesDict, typeId, devId):
         valuesDict["pin"] = ''
         self.temp_ecobeeAccount.get_tokens()
