@@ -77,8 +77,8 @@ class EcobeeAccount:
         params = {'response_type': 'ecobeePin', 'client_id': self.api_key, 'scope': 'smartWrite'}
         try:
             request = requests.get('https://api.ecobee.com/authorize', params=params)
-        except RequestException:
-            self.logger.error("PIN Request Error connecting to Ecobee.  Possible connectivity outage.")
+        except requests.RequestException, e:
+            self.logger.error("PIN Request Error, exception = {}".format(e))
             return None
             
         if request.status_code == requests.codes.ok:
@@ -88,9 +88,7 @@ class EcobeeAccount:
             return pin
             
         else:
-            error = request.json()['error']
-            error_description = request.json()['error_description']
-            self.logger.error("PIN Request failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            self.logger.error("PIN Request failed, response = '{}'".format(request.text))                
             return None
 
     # Authentication Step 3
@@ -99,8 +97,8 @@ class EcobeeAccount:
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': self.api_key}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
-        except RequestException:
-            self.logger.error("Token Request Error connecting to Ecobee.  Possible connectivity outage.")
+        except requests.RequestException, e:
+            self.logger.error("Token Request Error, exception = {}".format(e))
             self.authenticated = False
             return
             
@@ -112,9 +110,7 @@ class EcobeeAccount:
             self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
         else:
-            error = request.json()['error']
-            error_description = request.json()['error_description']
-            self.logger.error("Token Request failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            self.logger.error("Token Request failed, response = '{}'".format(request.text))                
             self.authenticated = False
 
 
@@ -130,8 +126,8 @@ class EcobeeAccount:
         params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': self.api_key}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
-        except requests.RequestException:
-            self.logger.error("Token Refresh Error connecting to Ecobee.  Possible connectivity outage.")
+        except requests.RequestException, e:
+            self.logger.error("Token Refresh Error, exception = {}".format(e))
             return
             
         if request.status_code == requests.codes.ok:
@@ -168,21 +164,15 @@ class EcobeeAccount:
                             '"includeSettings":"true"}}')}
         try:
             request = requests.get('https://api.ecobee.com/1/thermostat', headers=header, params=params)
-        except RequestException:
-            self.logger.error("Thermostat Update Error connecting to Ecobee.  Possible connectivity outage.")
+        except requests.RequestException, e:
+            self.logger.error("Thermostat Update Error, exception = {}".format(e))
             return
             
         if request.status_code == requests.codes.ok:
             self.serverData = request.json()['thermostatList']
             self.logger.debug("Thermostat Update OK, got info on {} devices".format(len(self.serverData)))
         else:
-            try:
-                error = request.json()['error']
-                error_description = request.json()['error_description']
-            except:
-                self.logger.error("Thermostat Update failed, response = '{}'".format(request.text))                
-            else:
-                self.logger.error("Thermostat Update failed, code {}, error '{}', description '{}'".format(request.status_code, error, error_description))
+            self.logger.error("Thermostat Update failed, response = '{}'".format(request.text))                
 
 
 #   Generic routine for other API calls
@@ -198,17 +188,12 @@ class EcobeeAccount:
             self.logger.error("API Error connecting to Ecobee.  Possible connectivity outage. Could not make request: {}".format(log_msg_action))
             return None
             
-        if request.status_code == requests.codes.ok:
-            self.logger.debug("API '{}' request completed, result = {}".format(log_msg_action, request))
-            return request
-        else:
-            try:
-                error = request.json()['error']
-                error_description = request.json()['error_description']
-                self.logger.error("API Error while attempting to {}. Error code {}, error '{}', description '{}'.".format(log_msg_action, request.status_code, error, error_description))
-            except:
-                self.logger.debug("API '{}' request failed, result = {}".format(log_msg_action, request.json()))
+        if not request.status_code == requests.codes.ok:
+            self.logger.debug("API '{}' request failed, result = {}".format(log_msg_action, request.text))
             return None
+
+        self.logger.debug("API '{}' request completed, result = {}".format(log_msg_action, request))
+        return request
 
 
 

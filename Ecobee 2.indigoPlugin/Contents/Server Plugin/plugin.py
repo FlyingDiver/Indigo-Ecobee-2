@@ -147,7 +147,7 @@ class Plugin(indigo.PluginBase):
                             self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = account.refresh_token
 
                     
-                self.sleep(1.0)
+                self.sleep(5.0)
 
         except self.StopThread:
             pass
@@ -415,7 +415,7 @@ class Plugin(indigo.PluginBase):
 
         ###### SET FAN MODE ######
         elif action.thermostatAction == indigo.kThermostatAction.SetFanMode:
-            self.handleChangeFanModeAction(dev, action.actionMode, u"set fan hold", u"hvacFanIsOn")
+            self.handleChangeFanModeAction(dev, action.actionMode, u"hvacFanIsOn")
 
         ###### SET COOL SETPOINT ######
         elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
@@ -504,9 +504,10 @@ class Plugin(indigo.PluginBase):
 
     def handleChangeHvacModeAction(self, dev, newHvacMode):
         hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
-        self.logger.debug(u"{} ({}): Mode set to: {}".format(dev.name, dev.address, newHvacMode))
+        self.logger.debug(u"{} ({}): Mode set to: {}".format(dev.name, dev.address, hvac_mode))
 
         self.active_devices[dev.id].set_hvac_mode(hvac_mode)
+        self.update_needed = True
         if "hvacOperationMode" in dev.states:
             dev.updateStateOnServer("hvacOperationMode", newHvacMode)
 
@@ -533,6 +534,7 @@ class Plugin(indigo.PluginBase):
         else:
             self.logger.error(u'{}: handleChangeSetpointAction Invalid operation - {}'.format(dev.name, stateKey))
         
+        self.update_needed = True
         if stateKey in dev.states:
             dev.updateStateOnServer(stateKey, newSetpoint, uiValue="%.1f °F" % (newSetpoint))
 
@@ -553,6 +555,7 @@ class Plugin(indigo.PluginBase):
             self.logger.info(u'{}: resume normal program to set fan to Auto'.format(dev.name))
             self.active_devices[dev.id].resumeProgram()
 
+        self.update_needed = True
         if stateKey in dev.states:
             dev.updateStateOnServer(stateKey, requestedFanMode, uiValue="True")
 
