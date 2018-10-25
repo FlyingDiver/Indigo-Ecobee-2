@@ -553,7 +553,7 @@ class Plugin(indigo.PluginBase):
 
         if newFanMode == u"auto":
             self.logger.info(u'{}: resume normal program to set fan to Auto'.format(dev.name))
-            self.active_devices[dev.id].resumeProgram()
+            self.active_devices[dev.id].resume_program()
 
         self.update_needed = True
         if stateKey in dev.states:
