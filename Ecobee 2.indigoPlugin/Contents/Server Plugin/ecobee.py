@@ -25,7 +25,6 @@ class EcobeeAccount:
         self.authenticated = False
         self.next_refresh = time.time()
         
-        
         if refresh_token:
             self.logger.debug("EcobeeAccount __init__, using refresh token = {}".format(refresh_token))
             self.refresh_token = refresh_token
@@ -215,12 +214,16 @@ class EcobeeBase:
 
     def __init__(self, dev):
         self.logger = logging.getLogger('Plugin.ecobee_devices')
-        
         self.dev = dev
         self.address = dev.pluginProps["address"]
         self.ecobee = None
-                
         
+        configDone = dev.pluginProps.get('configDone', False)
+        self.logger.debug(u"%s: __init__ configDone = %s" % (dev.name, str(configDone)))
+        if configDone:
+            return
+        
+                
     def updatable(self):
         if not self.dev.configured:
             self.logger.debug('device %s not fully configured yet; not updating state' % self.address)
@@ -420,7 +423,7 @@ class EcobeeThermostat(EcobeeBase):
         if thermostat.get('events') and len(thermostat.get('events')) > 0:
             latestEventType = thermostat.get('events')[0].get('type')
 
-        self.logger.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+        self.logger.threaddebug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
         # should be exactly one; if not, we should panic
         matchedSensor = [
@@ -428,7 +431,7 @@ class EcobeeThermostat(EcobeeBase):
             if 'thermostat' == rs.get('type')
         ][0]
 
-        self.logger.debug('matched sensor: {}'.format(matchedSensor))
+        self.logger.threaddebug('matched sensor: {}'.format(matchedSensor))
 
         self.name = matchedSensor.get('name')
 
@@ -440,7 +443,7 @@ class EcobeeThermostat(EcobeeBase):
 
         # humidity
         humidityCapability = self.get_capability(matchedSensor, 'humidity')
-        self.logger.debug('humidityCapability: {}'.format(humidityCapability))
+        self.logger.threaddebug('humidityCapability: {}'.format(humidityCapability))
         self.dev.updateStateOnServer(key="humidityInput1", value=float(humidityCapability.get('value')))
 
         EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
@@ -485,7 +488,7 @@ class EcobeeSmartThermostat(EcobeeBase):
 
         status = thermostat.get('equipmentStatus')
 
-        self.logger.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+        self.logger.threaddebug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
         self.name = thermostat.get('name')
 
