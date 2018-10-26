@@ -1,27 +1,85 @@
 <?xml version="1.0"?>
 <Devices>
+	<DeviceFactory>
+		<Name>Create Ecobee 2 Device</Name>
+		<ButtonTitle>Create</ButtonTitle>
+		<ConfigUI>
+        ￼   <Field type="menu" id="deviceType" defaultValue="EcobeeAccount">
+                <Label>Device Type:</Label>
+                <List>
+                    <Option value="EcobeeAccount">Ecobee Account</Option>
+                    <Option value="EcobeeThermostat">Ecobee Thermostat</Option>
+                </List>
+            </Field>
+             <Field id="separator1" type="separator"/>
+           
+            <Field id="getPin" type="button" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>1. Get an Ecobee auth code:</Label>
+                <Title>Get Code</Title>
+                <CallbackMethod>request_pin</CallbackMethod>
+            </Field>
+ 
+            <Field id="pin" type="textfield" readonly="true" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>Auth Code:</Label>
+            </Field>
+ 
+            <Field id="openEcobee" type="button" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>2. Register the Auth Code:</Label>
+                <Title>Open Ecobee Site</Title>
+                <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
+            </Field>
+            <Field id="openEcobeeNote" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>Go to https://www.ecobee.com/consumerportal/ and add plugin to My Apps.</Label>
+            </Field>
+ 
+            <Field id="getTokens" type="button" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>3. Complete Authentication:</Label>
+                <Title> GO </Title>
+                <CallbackMethod>get_tokens</CallbackMethod>
+            </Field>
+ 
+            <Field id="authStatus" type="textfield" readonly="true" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
+                <Label>Authentication Status:</Label>
+            </Field>
+
+            <Field id="account" type="menu" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label>Ecobee Account:</Label>
+                <List class="self" method="get_account_list" dynamicReload="true"/>
+                <CallbackMethod>menuChanged</CallbackMethod>
+            </Field>
+            <Field id="address" type="menu" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label>Thermostat:</Label>
+                <List class="self" method="get_thermostat_list" dynamicReload="true"/>
+                <CallbackMethod>menuChanged</CallbackMethod>
+            </Field>
+
+		</ConfigUI>
+	</DeviceFactory>
 
     <Device type="custom" id="EcobeeAccount">
         <Name>Ecobee User Account</Name>
         <ConfigUI>
             <Field id="getPin" type="button">
-                <Label>1. Get an Ecobee PIN:</Label>
-                <Title>Get PIN</Title>
+                <Label>1. Get an Ecobee auth code:</Label>
+                <Title>Get Code</Title>
                 <CallbackMethod>request_pin</CallbackMethod>
             </Field>
  
             <Field id="pin" type="textfield" readonly="true">
-                <Label>PIN:</Label>
+                <Label>Auth Code:</Label>
             </Field>
  
             <Field id="openEcobee" type="button">
-                <Label>2. Register the PIN:</Label>
-                <Title>Open http://www.ecobee.com</Title>
+                <Label>2. Register the Auth Code:</Label>
+                <Title>Open Ecobee Site</Title>
                 <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
+            </Field>
+            <Field id="openEcobeeNote" type="label" fontSize="small" fontColor="darkgray">
+                <Label>Go to https://www.ecobee.com/consumerportal/ and add plugin to My Apps.</Label>
             </Field>
  
             <Field id="getTokens" type="button">
-                <Label>3. Authenticate:</Label>
+                <Label>3. Complete Authentication:</Label>
                 <Title> GO </Title>
                 <CallbackMethod>get_tokens</CallbackMethod>
             </Field>
@@ -43,9 +101,8 @@
     </Device>
  
     <Device type="thermostat" id="EcobeeThermostat">
-        <Name>Ecobee 3 , 3 lite, 4</Name>
+        <Name>Ecobee Thermostat</Name>
         <ConfigUI>
-			<Field id="IsThermostat" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="account" type="menu">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
@@ -57,93 +114,23 @@
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
         </ConfigUI>
-        <States>
-            <State id="modelNumber">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Model</TriggerLabel>
-                <ControlPageLabel>Model</ControlPageLabel>
-            </State>
-            <State id="climate">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Climate</TriggerLabel>
-                <ControlPageLabel>Climate</ControlPageLabel>
-            </State>
-            <State id="occupied" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Occupied</TriggerLabel>
-                <ControlPageLabel>Occupied</ControlPageLabel>
-            </State>
-            <State id="autoAway" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Auto-Away</TriggerLabel>
-                <ControlPageLabel>Auto-Away</ControlPageLabel>
-            </State>
-            <State id="autoHome" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Auto-Home</TriggerLabel>
-                <ControlPageLabel>Auto-Home</ControlPageLabel>
-            </State>
-            <State id="fanMinOnTime" readonly="false">
-                <ValueType>Integer</ValueType>
-                <TriggerLabel>Minimum fan time</TriggerLabel>
-                <ControlPageLabel>Minimum fan time</ControlPageLabel>
-            </State>
-        </States>
     </Device>
 
-    <Device type="thermostat" id="EcobeeSmartThermostat">
-        <Name>Ecobee 'Smart', 'Smart Si'</Name>
+    <Device type="sensor" id="OccupancySensor">
+        <Name>Occupancy Sensor</Name>
         <ConfigUI>
-			<Field id="IsThermostat" type="checkbox" defaultValue="true" hidden="true" />
-            <Field id="account" type="menu">
-                <Label>Ecobee Account:</Label>
-                <List class="self" method="get_account_list" dynamicReload="true"/>
-                <CallbackMethod>menuChanged</CallbackMethod>
-            </Field>
-            <Field id="address" type="menu">
-                <Label>Thermostat:</Label>
-                <List class="self" method="get_thermostat_list" dynamicReload="true"/>
-                <CallbackMethod>menuChanged</CallbackMethod>
-            </Field>
+			<Field id="SupportsOnState" type="checkbox" defaultValue="true" hidden="true" />
+			<Field id="SupportsSensorValue" type="checkbox" defaultValue="false" hidden="true" />
+			<Field id="SupportsStatusRequest" type="checkbox" defaultValue="false" hidden="true" />
         </ConfigUI>
-        <States>
-            <State id="modelNumber">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Model</TriggerLabel>
-                <ControlPageLabel>Model</ControlPageLabel>
-            </State>
-            <State id="climate">
-                <ValueType>String</ValueType>
-                <TriggerLabel>Climate</TriggerLabel>
-                <ControlPageLabel>Climate</ControlPageLabel>
-            </State>
-        </States>
     </Device>
 
-    <Device type="sensor" id="EcobeeRemoteSensor">
+    <Device type="sensor" id="RemoteSensor">
         <Name>Ecobee Remote Sensor</Name>
         <ConfigUI>
 			<Field id="SupportsOnState" type="checkbox" defaultValue="true" hidden="true" />
 			<Field id="SupportsSensorValue" type="checkbox" defaultValue="true" hidden="true" />
-			<Field id="SupportsStatusRequest" type="checkbox" defaultValue="true" hidden="true" />
-            <Field id="account" type="menu">
-                <Label>Ecobee Account:</Label>
-                <List class="self" method="get_account_list" dynamicReload="true"/>
-                <CallbackMethod>menuChanged</CallbackMethod>
-            </Field>
-            <Field id="address" type="menu">
-                <Label>Thermostat:</Label>
-                <List class="self" method="get_remote_sensor_list" dynamicReload="true"/>
-                <CallbackMethod>menuChanged</CallbackMethod>
-            </Field>
+			<Field id="SupportsStatusRequest" type="checkbox" defaultValue="false" hidden="true" />
         </ConfigUI>
-        <States>
-            <State id="occupied" readonly="true">
-                <ValueType boolType="YesNo">Boolean</ValueType>
-                <TriggerLabel>Occupied</TriggerLabel>
-                <ControlPageLabel>Occupied</ControlPageLabel>
-            </State>
-        </States>
-        <UiDisplayStateId>temperature</UiDisplayStateId>
     </Device>
 </Devices>
