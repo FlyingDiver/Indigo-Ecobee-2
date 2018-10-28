@@ -269,6 +269,8 @@ class EcobeeThermostat:
             self.logger.debug(u"{}: adding occupancy device {}".format(dev.name, occupancy_id))
             if occupancy_id:
                 self.occupancy = indigo.devices[occupancy_id]
+            else:
+                self.occupancy = None
                 
             remote_list = dev.pluginProps.get('remotes', None)
             self.logger.debug(u"{}: adding remote list {}".format(dev.name, remote_list))
@@ -296,7 +298,7 @@ class EcobeeThermostat:
         dev.subModel = ECOBEE_MODELS[device_type]
         dev.replaceOnServer()
 
-        if  device_type in  ['athenaSmart', 'corSmart']:
+        if  device_type in ['athenaSmart', 'corSmart', 'apolloSmart']:
 
             # set props for this specific device type
             
@@ -353,7 +355,6 @@ class EcobeeThermostat:
                                                         'address': self.dev.pluginProps["address"]
                                                     },
                                                 folder=dev.folderId)
-                                            
                 newdev.model = dev.model
                 newdev.subModel = "Remote"
                 newdev.replaceOnServer()    
@@ -365,7 +366,53 @@ class EcobeeThermostat:
             dev.replacePluginPropsOnServer(newProps)
            
 
-        elif device_type == 'idtSmart':
+        elif  device_type in ['nikeSmart']:
+
+            # set props for this specific device type
+            
+            newProps = dev.pluginProps
+            newProps["device_type"] = device_type
+            newProps["configDone"] = True
+            newProps["NumHumidityInputs"] = 1
+            newProps["NumTemperatureInputs"] = 2
+            newProps["ShowCoolHeatEquipmentStateUI"] = True
+                        
+            # Create any linked remote sensors
+            
+            remotes = thermostat.get("remotes")
+            self.logger.debug(u"{}: {} remotes".format(dev.name, len(remotes)))
+                        
+            remote_ids = indigo.Dict()
+            self.remotes = []
+            
+            for code, rem in remotes.items():
+                
+                self.logger.info(u"Adding Remote Sensor {} to '{}' ({})".format(code, dev.name, dev.id))
+
+                remote_name = "{} Remote - {} ({})".format(dev.name, rem["name"], code)
+                newdev = indigo.device.create(indigo.kProtocol.Plugin, 
+                                                address=dev.address,
+                                                name=remote_name,
+                                                deviceTypeId="RemoteSensor", 
+                                                groupWithDevice=dev.id,
+                                                props={ 'configDone': True, 
+                                                        'SupportsSensorValue': True,
+                                                        'SupportsStatusRequest': False,
+                                                        'account': self.dev.pluginProps["account"],
+                                                        'address': self.dev.pluginProps["address"]
+                                                    },
+                                                folder=dev.folderId)
+                newdev.model = dev.model
+                newdev.subModel = "Remote"
+                newdev.replaceOnServer()    
+                newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
+                remote_ids[code] = str(newdev.id)
+                self.remotes.append(newdev)
+                    
+            newProps["remotes"] = remote_ids
+            dev.replacePluginPropsOnServer(newProps)
+           
+        elif  device_type in ['idtSmart', 'siSmart']:
 
             newProps = dev.pluginProps
             newProps["device_type"] = device_type
@@ -374,8 +421,6 @@ class EcobeeThermostat:
             newProps["ShowCoolHeatEquipmentStateUI"] = True
             dev.replacePluginPropsOnServer(newProps)
 
-            
-            
         self.logger.info(u"Configured {}".format(dev.name))
 
                 

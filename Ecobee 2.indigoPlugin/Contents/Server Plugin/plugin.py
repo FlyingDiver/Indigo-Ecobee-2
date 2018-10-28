@@ -222,7 +222,7 @@ class Plugin(indigo.PluginBase):
         valuesDict = indigo.Dict()
         errorMsgDict = indigo.Dict()
 
-        # change default to creating Thermostats if we have at least one account defined
+        # change default to creating Thermostats if there's at least one account defined
         
         if len(self.ecobee_accounts) > 0:
             valuesDict["deviceType"] = "EcobeeThermostat"
