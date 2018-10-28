@@ -460,6 +460,7 @@ class EcobeeThermostat:
         update_list.append({'key' : "fanMinOnTime", 'value' : fanMinOnTime})
 
         status = thermostat.get('equipmentStatus')
+        update_list.append({'key' : "equipmentStatus", 'value' : status})
 
         val = bool(status and ('heatPump' in status or 'auxHeat' in status))
         update_list.append({'key' : "hvacHeaterIsOn", 'value' : val})
@@ -489,7 +490,7 @@ class EcobeeThermostat:
         
             occupied = thermostat.get('internal').get('occupancy')
             self.occupancy.updateStateOnServer(key="onOffState", value = occupied)
-            if occupied:
+            if occupied == u'true':
                 self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
             else:
                 self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
@@ -503,7 +504,7 @@ class EcobeeThermostat:
             
                 occupied = thermostat.get('remotes').get(code).get('occupancy')
                 remote.updateStateOnServer(key="onOffState", value = occupied)
-                if occupied:
+                if occupied == u'true':
                     remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
                 else:
                     remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)

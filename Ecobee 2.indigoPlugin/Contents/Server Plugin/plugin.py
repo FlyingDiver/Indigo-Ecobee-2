@@ -151,7 +151,7 @@ class Plugin(indigo.PluginBase):
                             self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = account.refresh_token
                             self.savePluginPrefs()
 
-                self.sleep(5.0)
+                self.sleep(2.0)
 
         except self.StopThread:
             pass
@@ -284,6 +284,11 @@ class Plugin(indigo.PluginBase):
                                 "TriggerLabel" : "Climate", 
                                 "Type"         : 150 })
             stateList.append({  "Disabled"     : False, 
+                                "Key"          : "equipmentStatus",     
+                                "StateLabel"   : "Status", 
+                                "TriggerLabel" : "Status", 
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
                                 "Key"          : "occupied", 
                                 "StateLabel"   : "Occupied (yes or no)",   
                                 "TriggerLabel" : "Occupied",   
@@ -316,6 +321,11 @@ class Plugin(indigo.PluginBase):
                                 "Key"          : "climate",     
                                 "StateLabel"   : "Climate", 
                                 "TriggerLabel" : "Climate", 
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "equipmentStatus",     
+                                "StateLabel"   : "Status", 
+                                "TriggerLabel" : "Status", 
                                 "Type"         : 150 })
         
         self.logger.threaddebug("getDeviceStateList, returning state list = {}".format(stateList))        
@@ -412,7 +422,8 @@ class Plugin(indigo.PluginBase):
  
    
     def actionControlThermostat(self, action, dev):
-        ###### SET HVAC MODE ######
+        self.logger.debug(u"{}: action.thermostatAction: {}".format(dev.name, action.thermostatAction))
+       ###### SET HVAC MODE ######
         if action.thermostatAction == indigo.kThermostatAction.SetHvacMode:
             self.handleChangeHvacModeAction(dev, action.actionMode)
 
@@ -452,7 +463,7 @@ class Plugin(indigo.PluginBase):
         elif action.thermostatAction in [indigo.kThermostatAction.RequestStatusAll, indigo.kThermostatAction.RequestMode,
          indigo.kThermostatAction.RequestEquipmentState, indigo.kThermostatAction.RequestTemperatures, indigo.kThermostatAction.RequestHumidities,
          indigo.kThermostatAction.RequestDeadbands, indigo.kThermostatAction.RequestSetpoints]:
-            self.active_devices[dev.id].update()
+            self.update_needed = True
 
         ###### UNTRAPPED CONDITIONS ######
         # Explicitly show when nothing matches, indicates errors and unimplemented actions instead of quietly swallowing them
@@ -460,8 +471,9 @@ class Plugin(indigo.PluginBase):
             self.logger.warning(u"{}: Unimplemented action.thermostatAction: {}".format(dev.name, action.thermostatAction))
 
     def actionControlUniversal(self, action, dev):
+        self.logger.debug(u"{}: action.actionControlUniversal: {}".format(dev.name, action.deviceAction))
         if action.deviceAction == indigo.kUniversalAction.RequestStatus:
-            self.active_devices[dev.id].update()
+            self.update_needed = True
         else:
             self.logger.warning(u"{}: Unimplemented action.deviceAction: {}".format(dev.name, action.deviceAction))
 
