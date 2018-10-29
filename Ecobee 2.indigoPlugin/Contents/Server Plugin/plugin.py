@@ -66,11 +66,10 @@ class Plugin(indigo.PluginBase):
         self.logger.info(u"Starting Ecobee")
        
         macOS = platform.mac_ver()[0]
-        self.logger.debug(u"macOS version = {}".format(macOS))
+        self.logger.debug(u"macOS {}, Indigo {}".format(macOS, indigo.server.version))
         if int(macOS[3:5]) < 13:
             self.logger.error(u"Unsupported macOS version! {}".format(macOS))
-        
-
+                
         self.updateFrequency = float(self.pluginPrefs.get('updateFrequency', "15")) *  60.0
         self.logger.debug(u"updateFrequency = " + str(self.updateFrequency))
         self.next_update = time.time() + self.updateFrequency
@@ -180,7 +179,6 @@ class Plugin(indigo.PluginBase):
         try:
             ecobee = self.ecobee_accounts[int(valuesDict["account"])]
         except:
-            self.logger.error("get_thermostat_list: error accessing ecobee account")
             return []
             
         active_stats =  [
@@ -271,7 +269,7 @@ class Plugin(indigo.PluginBase):
         
         self.logger.debug("getDeviceStateList, typeID = {}, model = {}, device_type = {}".format(dev.deviceTypeId, dev.subModel, device_type))
                         
-        if device_type in ['athenaSmart', 'corSmart']:
+        if device_type in ['athenaSmart', 'corSmart', 'apolloSmart']:
 
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
@@ -293,6 +291,39 @@ class Plugin(indigo.PluginBase):
                                 "StateLabel"   : "Occupied (yes or no)",   
                                 "TriggerLabel" : "Occupied",   
                                 "Type"         : 52 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "autoAway", 
+                                "StateLabel"   : "Auto-Away (yes or no)",   
+                                "TriggerLabel" : "Auto-Away",   
+                                "Type"         : 52 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "autoHome", 
+                                "StateLabel"   : "Auto-Home (yes or no)",   
+                                "TriggerLabel" : "Auto-Home",   
+                                "Type"         : 52 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "fanMinOnTime", 
+                                "StateLabel"   : "Minimum fan time",   
+                                "TriggerLabel" : "Minimum fan time",   
+                                "Type"         : 100 })
+        
+        elif device_type in ['nikeSmart']:
+
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "device_type", 
+                                "StateLabel"   : "Model",   
+                                "TriggerLabel" : "Model",   
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "climate",     
+                                "StateLabel"   : "Climate", 
+                                "TriggerLabel" : "Climate", 
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "equipmentStatus",     
+                                "StateLabel"   : "Status", 
+                                "TriggerLabel" : "Status", 
+                                "Type"         : 150 })
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "autoAway", 
                                 "StateLabel"   : "Auto-Away (yes or no)",   

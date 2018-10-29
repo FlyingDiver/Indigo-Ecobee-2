@@ -166,8 +166,14 @@ class EcobeeAccount:
             self.logger.error("Thermostat Update failed, response = '{}'".format(request.text))                
 
         serverData = request.json()['thermostatList']
-        self.logger.debug("Thermostat Update OK, got info on {} devices".format(len(serverData)))
-        self.logger.threaddebug("{}".format(serverData))
+        serverStatus = request.json()['status']
+        if serverStatus["code"] == 0:
+            self.logger.debug("Thermostat Update OK, got info on {} devices".format(len(serverData)))
+        else:
+            self.logger.warning("Thermostat Update Error, code  = {}, message = {}.".format(serverStatus["code"], serverStatus["message"]))
+            return
+            
+        self.logger.threaddebug(json.dumps(serverData, sort_keys=True, indent=4, separators=(',', ': ')))
             
         # Extract the relevant info from the server data and put it in a convenient Dict form
         
@@ -177,6 +183,7 @@ class EcobeeAccount:
             
             self.thermostats[identifier] = {    "name"              : therm["name"], 
                                                 "brand"             : therm["brand"], 
+                                                "features"          : therm["features"], 
                                                 "modelNumber"       : therm["modelNumber"],
                                                 "equipmentStatus"   : therm["equipmentStatus"],
                                                 "currentClimate"    : therm["program"]["currentClimateRef"],
@@ -194,6 +201,11 @@ class EcobeeAccount:
                 latestEventType = None
             self.thermostats[identifier]["latestEventType"] = latestEventType
 
+            climates = {}
+            for c in therm["program"]["climates"]:
+                climates[c["climateRef"]] = c["name"]
+            self.thermostats[identifier]["climates"] = climates
+                
             remotes = {}
             for remote in therm[u"remoteSensors"]:
                 if remote["type"] == "ecobee3_remote_sensor":
@@ -208,7 +220,7 @@ class EcobeeAccount:
                     self.thermostats[identifier]["internal"] = internal
             self.thermostats[identifier]["remotes"] = remotes
             
-        self.logger.debug("Thermostat Update, thermostats =\n{}".format(self.thermostats))
+        self.logger.threaddebug("Thermostat Update, thermostats =\n"+json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')))
                 
             
 #   Generic routine for other API calls
@@ -225,11 +237,15 @@ class EcobeeAccount:
             return None
             
         if not request.status_code == requests.codes.ok:
-            self.logger.debug("API '{}' request failed, result = {}".format(log_msg_action, request.text))
+            self.logger.warning("API '{}' request failed, result = {}".format(log_msg_action, request.text))
             return None
 
-        self.logger.debug("API '{}' request completed, result = {}".format(log_msg_action, request))
-        return request
+        serverStatus = request.json()['status']
+        if serverStatus["code"] == 0:
+            self.logger.debug("API '{}' request completed, result = {}".format(log_msg_action, request))
+        else:
+            self.logger.warning("API '{}' request error, code  = {}, message = {}.".format(serverStatus["code"], serverStatus["message"]))
+
 
 HVAC_MODE_MAP = {
     'heat'        : indigo.kHvacMode.Heat,
@@ -445,10 +461,9 @@ class EcobeeThermostat:
         return True
 
     def get_climates(self):
-        thermostat = self.ecobee.get_thermostat(self.address)
         return [
-            (rs.get('climateRef'), rs.get('name'))
-            for rs in thermostat.get('program').get('climates')
+            (key, val)
+            for key, val in self.ecobee.thermostats[self.address]["climates"].items()
         ]
 
     def update(self):
@@ -578,7 +593,7 @@ class EcobeeThermostat:
                     }
                 }
         log_msg_action = "set HVAC mode"
-        return self.ecobee.make_request(body, log_msg_action)
+        self.ecobee.make_request(body, log_msg_action)
 
 
     def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
@@ -602,7 +617,7 @@ class EcobeeThermostat:
                     ]
                 }
         log_msg_action = "set hold temp"
-        return self.ecobee.make_request(body, log_msg_action)
+        self.ecobee.make_request(body, log_msg_action)
 
     def set_hold_temp_with_fan(self, cool_temp, heat_temp, hold_type="nextTransition"):     # Set a fan hold
         body =  {
@@ -626,7 +641,7 @@ class EcobeeThermostat:
                     ]
                 }
         log_msg_action = "set hold temp with fan on"
-        return self.ecobee.make_request(body, log_msg_action)
+        self.ecobee.make_request(body, log_msg_action)
 
     def set_climate_hold(self, climate, hold_type="nextTransition"):    # Set a climate hold - ie away, home, sleep
         body =  {
@@ -648,7 +663,7 @@ class EcobeeThermostat:
                     ]
                 }
         log_msg_action = "set climate hold"
-        return self.ecobee.make_request(body, log_msg_action)
+        self.ecobee.make_request(body, log_msg_action)
 
     def resume_program(self):   # Resume currently scheduled program
         body =  {
@@ -669,7 +684,7 @@ class EcobeeThermostat:
                     ]
                 }
         log_msg_action = "resume program"
-        return self.ecobee.make_request(body, log_msg_action)
+        self.ecobee.make_request(body, log_msg_action)
 
 
 

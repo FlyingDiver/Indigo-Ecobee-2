@@ -10,7 +10,7 @@
 -->
 <Actions>
 
-    <Action id="resumeProgram" deviceFilter="self, props.IsThermostat">
+    <Action id="resumeProgram" deviceFilter="self.EcobeeThermostat">
         <Name>Resume Program</Name>
         <CallbackMethod>actionResumeProgram</CallbackMethod>
     </Action>
@@ -20,7 +20,7 @@
         <CallbackMethod>actionResumeAllPrograms</CallbackMethod>
     </Action>
     
-    <Action id="activateComfortSetting" deviceFilter="self, props.IsThermostat">
+    <Action id="activateComfortSetting" deviceFilter="self.EcobeeThermostat">
         <Name>Activate Comfort Setting</Name>
         <CallbackMethod>actionActivateComfortSetting</CallbackMethod>
         <ConfigUI>
