@@ -290,11 +290,13 @@ class EcobeeThermostat:
                 
             remote_list = dev.pluginProps.get('remotes', None)
             self.logger.debug(u"{}: adding remote list {}".format(dev.name, remote_list))
-            if len(remote_list) > 0:
+            if remote_list and len(remote_list) > 0:
                 self.remotes = {}
                 for code, rem_id in remote_list.items():
                     self.remotes[code] = indigo.devices[int(rem_id)]
-                
+            else:
+                self.remotes = None
+            
             return
 
 #

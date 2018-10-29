@@ -358,6 +358,11 @@ class Plugin(indigo.PluginBase):
                                 "StateLabel"   : "Status", 
                                 "TriggerLabel" : "Status", 
                                 "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "fanMinOnTime", 
+                                "StateLabel"   : "Minimum fan time",   
+                                "TriggerLabel" : "Minimum fan time",   
+                                "Type"         : 100 })
         
         self.logger.threaddebug("getDeviceStateList, returning state list = {}".format(stateList))        
         return stateList
