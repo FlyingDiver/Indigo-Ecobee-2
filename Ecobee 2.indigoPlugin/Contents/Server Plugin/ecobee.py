@@ -272,13 +272,6 @@ class EcobeeThermostat:
         self.dev = dev
         self.address = dev.address
         
-        try:
-            accountID = int(self.dev.pluginProps["account"])
-            self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-        except:
-            self.ecobee = None
-            return
-
         if dev.pluginProps.get('configDone', False):
         
             occupancy_id = dev.pluginProps.get('occupancy', None)
@@ -300,8 +293,21 @@ class EcobeeThermostat:
             return
 
 #
+#       Account device must exist before config can be done
+#
+
+        try:
+            accountID = int(self.dev.pluginProps["account"])
+            self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+        except:
+            self.ecobee = None
+            return
+
+#
 #       This code only executed once for each device after it's created   
 #
+
+
         self.logger.debug(u"{}: doing initial config in __init__".format(dev.name))
 
         thermostat = self.ecobee.thermostats.get(self.address)
