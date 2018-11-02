@@ -126,6 +126,8 @@ class Plugin(indigo.PluginBase):
             while True:
                 
                 if (time.time() > self.next_update) or self.update_needed:
+                    self.update_needed = False
+                    self.next_update = time.time() + self.updateFrequency
                 
                     # update from Ecobee servers
                     
@@ -138,8 +140,6 @@ class Plugin(indigo.PluginBase):
                     for dev in self.active_devices.values():
                         dev.update()
                     
-                    self.next_update = time.time() + self.updateFrequency
-                    self.update_needed = False
 
                 # Refresh the auth tokens as needed.  Refresh interval for each account is calculated during the refresh
                 
@@ -212,11 +212,11 @@ class Plugin(indigo.PluginBase):
     def getDeviceConfigUiValues(self, pluginProps, typeId, devId):
         valuesDict = indigo.Dict(pluginProps)
         errorsDict = indigo.Dict()
-        self.logger.threaddebug("getDeviceConfigUiValues, typeID = {}, valuesDict = {}".format(typeId, valuesDict))
+        self.logger.debug("getDeviceConfigUiValues, typeID = {}, valuesDict = {}".format(typeId, valuesDict))
         return (valuesDict, errorsDict)
 
     def getDeviceFactoryUiValues(self, devIdList):
-        self.logger.threaddebug("getDeviceFactoryUiValues, devIdList = {}".format(devIdList))
+        self.logger.debug("getDeviceFactoryUiValues, devIdList = {}".format(devIdList))
         valuesDict = indigo.Dict()
         errorMsgDict = indigo.Dict()
 
@@ -229,12 +229,31 @@ class Plugin(indigo.PluginBase):
         return (valuesDict, errorMsgDict)
 
     def validateDeviceFactoryUi(self, valuesDict, devIdList):
-        self.logger.threaddebug("validateDeviceFactoryUi, valuesDict = {}, devIdList = {}".format(valuesDict, devIdList))
+        self.logger.debug("validateDeviceFactoryUi, valuesDict = {}, devIdList = {}".format(valuesDict, devIdList))
         errorsDict = indigo.Dict()
-        return (True, valuesDict, errorsDict)
+        valid = True
+        
+        if valuesDict["deviceType"] == "EcobeeThermostat":
+            if valuesDict["account"] == 0:
+                errorsDict["account"] = "No Ecobee Account Specified"
+                self.logger.warning("validateDeviceFactoryUi - No Ecobee Account Specified")
+                valid = False
+            
+            if len(valuesDict["address"]) == 0:
+                errorsDict["account"] = "No Thermostat Specified"
+                self.logger.warning("validateDeviceFactoryUi - No Thermostat Specified")
+                valid = False              
+
+        elif valuesDict["deviceType"] == "EcobeeAccount":
+            if valuesDict["authStatus"] != "Authenticated":
+                errorsDict["authStatus"] = "Ecobee Account Not Authenticated"
+                self.logger.warning("validateDeviceFactoryUi - Ecobee Account Not Authenticated")
+                valid = False
+        
+        return (valid, valuesDict, errorsDict)
 
     def closedDeviceFactoryUi(self, valuesDict, userCancelled, devIdList):
-        self.logger.threaddebug("closedDeviceFactoryUi, userCancelled = {}, valuesDict = {}, devIdList = {}".format(userCancelled, valuesDict, devIdList))
+        self.logger.debug("closedDeviceFactoryUi, userCancelled = {}, valuesDict = {}, devIdList = {}".format(userCancelled, valuesDict, devIdList))
         
         if userCancelled:
             return

@@ -268,41 +268,44 @@ class EcobeeThermostat:
 
     def __init__(self, dev):
         self.logger = logging.getLogger('Plugin.ecobee_devices')
-        self.logger.debug(u"{}: EcobeeThermostat __init__".format(dev.name))
         self.dev = dev
         self.address = dev.address
+        self.ecobee = None
         
-        try:
-            accountID = int(self.dev.pluginProps["account"])
-            self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-        except:
-            self.ecobee = None
-            return
+        configDone = dev.pluginProps.get('configDone', False)
+        
+        self.logger.debug(u"{}: EcobeeThermostat __init__ starting, configDone = {}".format(dev.name, configDone))
 
-        if dev.pluginProps.get('configDone', False):
-        
+        if configDone:
+
             occupancy_id = dev.pluginProps.get('occupancy', None)
-            self.logger.debug(u"{}: adding occupancy device {}".format(dev.name, occupancy_id))
             if occupancy_id:
+                self.logger.debug(u"{}: adding occupancy device {}".format(dev.name, occupancy_id))
                 self.occupancy = indigo.devices[occupancy_id]
             else:
+                self.logger.debug(u"{}: no occupancy device".format(dev.name))
                 self.occupancy = None
                 
             remote_list = dev.pluginProps.get('remotes', None)
-            self.logger.debug(u"{}: adding remote list {}".format(dev.name, remote_list))
             if remote_list and len(remote_list) > 0:
+                self.logger.debug(u"{}: adding {} remotes".format(dev.name, len(remote_list)))
                 self.remotes = {}
                 for code, rem_id in remote_list.items():
                     self.remotes[code] = indigo.devices[int(rem_id)]
             else:
                 self.remotes = None
-            
+                self.logger.debug(u"{}: no remotes".format(dev.name))
+
             return
 
-#
-#       This code only executed once for each device after it's created   
-#
-        self.logger.debug(u"{}: doing initial config in __init__".format(dev.name))
+        try:
+            accountID = int(self.dev.pluginProps["account"])
+            self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+            self.logger.debug(u"{}: EcobeeThermostat __init__ - self.ecobee = {}".format(dev.name, accountID))
+        except:
+            self.ecobee = None
+            return
+
 
         thermostat = self.ecobee.thermostats.get(self.address)
         if not thermostat:
@@ -362,7 +365,7 @@ class EcobeeThermostat:
 
                 remote_name = "{} Remote - {} ({})".format(dev.name, rem["name"], code)
                 newdev = indigo.device.create(indigo.kProtocol.Plugin, 
-                                                address=dev.address,
+                                                address=code,
                                                 name=remote_name,
                                                 deviceTypeId="RemoteSensor", 
                                                 groupWithDevice=dev.id,
@@ -409,7 +412,7 @@ class EcobeeThermostat:
 
                 remote_name = "{} Remote - {} ({})".format(dev.name, rem["name"], code)
                 newdev = indigo.device.create(indigo.kProtocol.Plugin, 
-                                                address=dev.address,
+                                                address=code,
                                                 name=remote_name,
                                                 deviceTypeId="RemoteSensor", 
                                                 groupWithDevice=dev.id,
@@ -442,26 +445,6 @@ class EcobeeThermostat:
         self.logger.info(u"Configured {}".format(dev.name))
 
                 
-    def updatable(self):
-        if not self.dev.configured:
-            self.logger.debug('device %s not fully configured yet; not updating state' % self.address)
-            return False
-            
-        # has the Ecobee account been initialized yet?
-        if not self.ecobee:
-            try:
-                accountID = int(self.dev.pluginProps["account"])
-                self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-            except:
-                self.logger.error(u"updatable: Error obtaining ecobee account object")
-                return False
-            
-            if not self.ecobee.authenticated:
-                self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device %s' % self.address)
-                return False
-
-        return True
-
     def get_climates(self):
         return [
             (key, val)
@@ -469,9 +452,26 @@ class EcobeeThermostat:
         ]
 
     def update(self):
+        
+        # has the Ecobee account been initialized yet?
+        if not self.ecobee:
+            self.logger.debug(u"{}: update() needs to configure ecobee device".format(self.dev.name))
 
-        if not self.updatable():
-            return
+            if len(indigo.activePlugin.ecobee_accounts) == 0:
+                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
+                return
+            
+            try:
+                accountID = int(self.dev.pluginProps["account"])
+                self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+                self.logger.debug(u"{}: Ecobee device assigned, {}".format(self.dev.name, accountID))
+            except:
+                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                return
+            
+            if not self.ecobee.authenticated:
+                self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
+                return
 
         thermostat = self.ecobee.thermostats[self.address]
         if not thermostat:
