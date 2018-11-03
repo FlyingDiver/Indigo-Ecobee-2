@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <PluginConfig>
-  <SupportURL>https://forums.indigodomo.com/viewforum.php?f=177</SupportURL>
+  <SupportURL>https://forums.indigodomo.com/viewforum.php?f=295</SupportURL>
   
   <Field id="temperatureScale" type="menu">
     <Label>Temperature scale:</Label>

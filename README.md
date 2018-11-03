@@ -4,11 +4,28 @@
 
 The plugin enables monitoring and control of Ecobee thermostats and remote sensors.
 
+Supported Thermostats:
+
+	
+	
 Requirements:
-  - A current username/password for your Ecobee account
-  - A supported Ecobee thermostat
+
+* A current username/password for your Ecobee account
+* A supported Ecobee thermostat:
+	* Ecobee 4
+	* Ecobee 3 lite
+	* Ecobee 3
+	* Ecobee Smart
+	* Ecobee Smart Si
+	* Carrier or Bryant Cor 	
+	
 
 How to use:
-  - Install the plugin
-  - Obtain 4 chatacter PIN from config dialog
-  - Log onto your Ecobee account, add app access using PIN
+
+1. Install the plugin
+2. Create an Ecobee Account device
+3. Obtain 4 character PIN from config dialog
+4. Log onto your Ecobee account, add app access using PIN
+5. Finish authentication in device config dialog
+6. Create thermostat devices
+

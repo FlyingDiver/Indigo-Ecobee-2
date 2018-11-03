@@ -9,6 +9,7 @@
      backlightBrightness state added to Devices.xml.
 -->
 <Actions>
+    <SupportURL>https://forums.indigodomo.com/viewforum.php?f=295</SupportURL>
 
     <Action id="resumeProgram" deviceFilter="self.EcobeeThermostat">
         <Name>Resume Program</Name>

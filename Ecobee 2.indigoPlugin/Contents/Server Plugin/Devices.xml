@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <Devices>
+    <SupportURL>https://forums.indigodomo.com/viewforum.php?f=295</SupportURL>
     <DeviceFactory>
         <Name>Create Ecobee 2 Device</Name>
         <ButtonTitle>Create</ButtonTitle>
