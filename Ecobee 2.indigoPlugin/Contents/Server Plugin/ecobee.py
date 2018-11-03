@@ -218,6 +218,10 @@ class EcobeeAccount:
                     for cap in remote["capability"]:
                         internal[cap["type"]] = cap["value"]
                     self.thermostats[identifier]["internal"] = internal
+                elif remote["type"] == "monitor_sensor":
+                    if remote["capability"]["type"] == "occupancy":
+                        self.thermostats[identifier]["internal"] = {"occupancy": remote["capability"]["value"]}
+
             self.thermostats[identifier]["remotes"] = remotes
             
         self.logger.threaddebug("Thermostat Update, thermostats =\n"+json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -319,7 +323,7 @@ class EcobeeThermostat:
         dev.subModel = ECOBEE_MODELS[device_type]
         dev.replaceOnServer()
 
-        if  device_type in ['athenaSmart', 'corSmart', 'apolloSmart']:
+        if  device_type in ['athenaSmart', 'apolloSmart']:
 
             # set props for this specific device type
             
@@ -433,6 +437,38 @@ class EcobeeThermostat:
             newProps["remotes"] = remote_ids
             dev.replacePluginPropsOnServer(newProps)
            
+        elif  device_type in ['corSmart']:
+
+            # set props for this specific device type
+            
+            newProps = dev.pluginProps
+            newProps["device_type"] = device_type
+            newProps["configDone"] = True
+            newProps["NumHumidityInputs"] = 1
+            newProps["ShowCoolHeatEquipmentStateUI"] = True
+                        
+            # Create the integral occupancy sensor.
+            
+            self.logger.info(u"Adding Occupancy Sensor to '{}' ({})".format(dev.name, dev.id))
+            newdev = indigo.device.create(indigo.kProtocol.Plugin, 
+                                            address=dev.address,
+                                            name=dev.name + " Occupancy",
+                                            deviceTypeId="OccupancySensor", 
+                                            groupWithDevice=dev.id,
+                                            props={ 'configDone': True, 
+                                                    'SupportsStatusRequest': False,
+                                                    'account': self.dev.pluginProps["account"],
+                                                    'address': self.dev.pluginProps["address"]
+                                                },
+                                            folder=dev.folderId)   
+            newdev.model = dev.model
+            newdev.subModel = "Occupancy"
+            newdev.replaceOnServer()    
+
+            self.occupancy = newdev
+            newProps["occupancy"] = newdev.id
+            dev.replacePluginPropsOnServer(newProps)
+           
         elif  device_type in ['idtSmart', 'siSmart']:
 
             newProps = dev.pluginProps
@@ -533,7 +569,7 @@ class EcobeeThermostat:
         val = bool(status and ('fan' in status or 'ventilator' in status))
         update_list.append({'key' : "hvacFanIsOn", 'value' : val})
         
-        if device_type in ['athenaSmart', 'corSmart', 'nikeSmart', 'apolloSmart']:
+        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart']:
         
             temp2 = thermostat.get('internal').get('temperature')
             update_list.append({'key'           : "temperatureInput2", 
@@ -552,7 +588,7 @@ class EcobeeThermostat:
         
             occupied = thermostat.get('internal').get('occupancy')
             self.occupancy.updateStateOnServer(key="onOffState", value = occupied)
-            if occupied == u'true':
+            if occupied == u'true' or occupied == u'1':
                 self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
             else:
                 self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
