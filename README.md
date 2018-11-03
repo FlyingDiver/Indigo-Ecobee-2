@@ -1,4 +1,4 @@
-# Ecobee thermostat plugin for Indigodomo Home Automation
+# Ecobee thermostat plugin for Indigo Home Automation
 
 [![N|Solid](http://forums.indigodomo.com/static/www/images/wordmark.png)](http://indigodomo.com)
 
