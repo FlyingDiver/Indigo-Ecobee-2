@@ -31,5 +31,18 @@
             </Field>
         </ConfigUI>
     </Action>
-    
+
+    <Action id="holdTypeSetting" deviceFilter="self.EcobeeThermostat">
+        <Name>Set Hold Type</Name>
+        <CallbackMethod>actionHoldTypeSetting</CallbackMethod>
+        <ConfigUI>
+        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
+                <Label>Default Hold Type:</Label>
+                <List>
+                    <Option value="nextTransition">Next Transition</Option>
+                    <Option value="indefinite">Indefinite</Option>
+                </List>
+            </Field>
+        </ConfigUI>
+    </Action>
 </Actions>

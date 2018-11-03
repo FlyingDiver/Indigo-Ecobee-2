@@ -539,13 +539,26 @@ class Plugin(indigo.PluginBase):
     
     def actionActivateComfortSetting(self, action, dev):
         self.logger.debug(u"{}: actionActivateComfortSetting".format(dev.name))
+        holdType = dev.pluginProps.get("holdType", "nextTransition")
+
         climate = action.props.get("climate")
-        self.active_devices[dev.id].set_climate_hold(climate)
+        self.active_devices[dev.id].set_climate_hold(climate, holdType)
 
     def climateListGenerator(self, filter, valuesDict, typeId, targetId):                                                                                                                 
         self.logger.debug(u"climateListGenerator: typeId = {}, targetId = {}".format(typeId, targetId))
         return self.active_devices[targetId].get_climates()
 
+    ########################################
+    # Set Hold Type
+    ########################################
+    
+    def actionHoldTypeSetting(self, action, dev):
+        self.logger.debug(u"{}: actionHoldTypeSetting".format(dev.name))
+         
+        props = dev.pluginProps
+        props["holdType"] = action.props.get("holdType")
+        dev.replacePluginPropsOnServer(props)                
+ 
  
     ########################################
     # Resume Program callbacks
@@ -593,13 +606,15 @@ class Plugin(indigo.PluginBase):
         #   API uses F scale
         newSetpoint = self._toFahrenheit(newSetpoint)
 
+        holdType = dev.pluginProps.get("holdType", "nextTransition")
+
         if stateKey == u"setpointCool":
             self.logger.info(u'{}: set cool to: {} and leave heat at: {}'.format(dev.name, newSetpoint, dev.heatSetpoint))
-            self.active_devices[dev.id].set_hold_temp(newSetpoint, dev.heatSetpoint)
+            self.active_devices[dev.id].set_hold_temp(newSetpoint, dev.heatSetpoint, holdType)
 
         elif stateKey == u"setpointHeat":
             self.logger.info(u'{}: set heat to: {} and leave cool at: {}'.format(dev.name, newSetpoint,dev.coolSetpoint))
-            self.active_devices[dev.id].set_hold_temp(dev.coolSetpoint, newSetpoint)
+            self.active_devices[dev.id].set_hold_temp(dev.coolSetpoint, newSetpoint, holdType)
 
         else:
             self.logger.error(u'{}: handleChangeSetpointAction Invalid operation - {}'.format(dev.name, stateKey))
@@ -616,10 +631,11 @@ class Plugin(indigo.PluginBase):
     def handleChangeFanModeAction(self, dev, requestedFanMode, stateKey):
        
         newFanMode = kFanModeEnumToStrMap.get(requestedFanMode, u"auto")
+        holdType = dev.pluginProps.get("holdType", "nextTransition")
         
         if newFanMode == u"on":
             self.logger.info(u'{}: set fan to ON, leave cool at {} and heat at {}'.format(dev.name, dev.coolSetpoint,dev.heatSetpoint))
-            self.active_devices[dev.id].set_hold_temp_with_fan(dev.coolSetpoint, dev.heatSetpoint)
+            self.active_devices[dev.id].set_hold_temp_with_fan(dev.coolSetpoint, dev.heatSetpoint, holdType)
 
         if newFanMode == u"auto":
             self.logger.info(u'{}: resume normal program to set fan to Auto'.format(dev.name))

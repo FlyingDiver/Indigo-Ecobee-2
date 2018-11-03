@@ -53,7 +53,15 @@
                 <List class="self" method="get_thermostat_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
-
+        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
+                <Label>Default Hold Type:</Label>
+                <List>
+                    <Option value="nextTransition">Next Transition</Option>
+                    <Option value="indefinite">Indefinite</Option>
+                    <Option value="holdHours">Hold Hours</Option>
+                    <Option value="dateTime">Date-Time</Option>
+                </List>
+            </Field>
         </ConfigUI>
     </DeviceFactory>
 
@@ -113,6 +121,13 @@
                 <Label>Thermostat:</Label>
                 <List class="self" method="get_thermostat_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
+            </Field>
+        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
+                <Label>Default Hold Type:</Label>
+                <List>
+                    <Option value="nextTransition">Next Transition</Option>
+                    <Option value="indefinite">Indefinite</Option>
+                </List>
             </Field>
         </ConfigUI>
     </Device>
