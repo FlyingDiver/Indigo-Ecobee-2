@@ -134,9 +134,20 @@ class EcobeeAccount:
             self.authenticated = True
             
         else:
-            self.logger.error("Token Refresh failed, response = '{}'".format(request.text))                
-            self.next_refresh = time.time() + 300.0         # try every five minutes
             self.authenticated = False
+            self.next_refresh = time.time() + 300.0         # try every five minutes
+
+            try:
+                error = request.json()['error']
+                if error == 'invalid_grant':
+                    self.logger.error(u"{}: Authentication lost, please re-authenticate.'".format(self.dev.name))
+                    self.next_refresh = time.time() + 300.0         # try every five minutes
+                    return
+                                  
+            except:
+                pass
+                
+            self.logger.error(u"{}: Token Refresh failed, response = '{}'".format(self.dev.name, request.text))                
 
         
 #
@@ -208,19 +219,25 @@ class EcobeeAccount:
                 
             remotes = {}
             for remote in therm[u"remoteSensors"]:
+
                 if remote["type"] == "ecobee3_remote_sensor":
                     code = remote[u"code"]
                     remotes[code] = {u"name": remote[u"name"]}
                     for cap in remote["capability"]:
                         remotes[code][cap["type"]] = cap["value"]
+
                 elif remote["type"] == "thermostat":
                     internal = {}
                     for cap in remote["capability"]:
                         internal[cap["type"]] = cap["value"]
                     self.thermostats[identifier]["internal"] = internal
+
                 elif remote["type"] == "monitor_sensor":
-                    if remote["capability"]["type"] == "occupancy":
-                        self.thermostats[identifier]["internal"] = {"occupancy": remote["capability"]["value"]}
+                    internal = {}
+                    for cap in remote["capability"]:
+                        if cap["type"] == "occupancy":
+                                internal[cap["type"]] = cap["value"]
+                    self.thermostats[identifier]["internal"] = internal
 
             self.thermostats[identifier]["remotes"] = remotes
             
