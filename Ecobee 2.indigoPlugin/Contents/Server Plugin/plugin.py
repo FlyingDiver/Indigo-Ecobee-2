@@ -564,8 +564,41 @@ class Plugin(indigo.PluginBase):
     # Resume Program callbacks
     ########################################
     
+    def menuResumeAllPrograms(self):
+        self.logger.debug(u"menuResumeAllPrograms")
+        for devId, thermostat in self.active_devices.items():
+            if indigo.devices[devId].deviceTypeId in ['EcobeeThermostat', 'EcobeeSmartThermostat']:
+                thermostat.resume_program()
+
     def menuResumeProgram(self):
         self.logger.debug(u"menuResumeProgram")
+        try:
+            deviceId = int(valuesDict["targetDevice"])
+        except:
+            self.logger.error(u"Bad Device specified for Resume Program operation")
+            return False
+
+        for thermId, thermostat in self.active_devices.items():
+            if thermId == deviceId:
+                thermostat.resume_program()
+        return True
+        
+    def menuDumpThermostat(self):
+        self.logger.debug(u"menuDumpThermostat")
+        try:
+            deviceId = int(valuesDict["targetDevice"])
+        except:
+            self.logger.error(u"Bad Device specified for Write Thermostat Data operation")
+            return False
+
+        for thermId, thermostat in self.active_devices.items():
+            if thermId == deviceId:
+                thermostat.dump_data()
+        return True
+        
+
+    def actionResumeAllPrograms(self, action, dev):
+        self.logger.debug(u"actionResumeAllPrograms")
         for devId, thermostat in self.active_devices.items():
             if indigo.devices[devId].deviceTypeId in ['EcobeeThermostat', 'EcobeeSmartThermostat']:
                 thermostat.resume_program()
@@ -573,12 +606,6 @@ class Plugin(indigo.PluginBase):
     def actionResumeProgram(self, action, dev):
         self.logger.debug(u"{}: actionResumeProgram".format(dev.name))
         self.active_devices[dev.id].resume_program()
-
-    def actionResumeAllPrograms(self, action, dev):
-        self.logger.debug(u"actionResumeAllPrograms")
-        for devId, thermostat in self.active_devices.items():
-            if indigo.devices[devId].deviceTypeId in ['EcobeeThermostat', 'EcobeeSmartThermostat']:
-                thermostat.resume_program()
     
 
     ########################################

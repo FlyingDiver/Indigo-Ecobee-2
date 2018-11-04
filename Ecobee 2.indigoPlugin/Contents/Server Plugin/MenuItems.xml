@@ -10,7 +10,29 @@
     <SupportURL>https://forums.indigodomo.com/viewforum.php?f=295</SupportURL>
     <MenuItem id="menu1">
         <Name>Resume All Programs</Name>
+        <CallbackMethod>menuResumeAllPrograms</CallbackMethod>
+    </MenuItem>
+
+    <MenuItem id="menu2">
+        <Name>Resume Program (Select Thermostat)</Name>
         <CallbackMethod>menuResumeProgram</CallbackMethod>
+        <ConfigUI>
+            <Field id="targetDevice" type="menu">
+                <Label>Select Thermostat:</Label>
+                <List class="self.EcobeeThermostat" filter="" dynamicReload="true"/>
+            </Field>
+        </ConfigUI>
+    </MenuItem>
+
+    <MenuItem id="menu3">
+        <Name>Write Thermostat Data to Log</Name>
+        <CallbackMethod>menuDumpThermostat</CallbackMethod>
+        <ConfigUI>
+            <Field id="targetDevice" type="menu">
+                <Label>Select Thermostat:</Label>
+                <List class="self.EcobeeThermostat" filter="" dynamicReload="true"/>
+            </Field>
+        </ConfigUI>
     </MenuItem>
 </MenuItems>
 
