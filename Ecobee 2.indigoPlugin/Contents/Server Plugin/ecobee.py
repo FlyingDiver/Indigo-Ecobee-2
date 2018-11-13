@@ -175,7 +175,8 @@ class EcobeeAccount:
             
         if request.status_code != requests.codes.ok:
             self.logger.error("Thermostat Update failed, response = '{}'".format(request.text))                
-
+            return
+            
         serverData = request.json()['thermostatList']
         serverStatus = request.json()['status']
         if serverStatus["code"] == 0:
