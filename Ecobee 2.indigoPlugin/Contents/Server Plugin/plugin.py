@@ -539,9 +539,10 @@ class Plugin(indigo.PluginBase):
     
     def actionActivateComfortSetting(self, action, dev):
         self.logger.debug(u"{}: actionActivateComfortSetting".format(dev.name))
-        holdType = dev.pluginProps.get("holdType", "nextTransition")
+        defaultHold = dev.pluginProps.get("holdType", "nextTransition")
 
         climate = action.props.get("climate")
+        holdType = action.props.get("holdType", defaultHold)
         self.active_devices[dev.id].set_climate_hold(climate, holdType)
 
     def climateListGenerator(self, filter, valuesDict, typeId, targetId):                                                                                                                 
