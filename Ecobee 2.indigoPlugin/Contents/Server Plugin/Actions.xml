@@ -40,8 +40,8 @@
     </Action>
 
     <Action id="holdTypeSetting" deviceFilter="self.EcobeeThermostat">
-        <Name>Set Hold Type</Name>
-        <CallbackMethod>actionHoldTypeSetting</CallbackMethod>
+        <Name>Set Default Hold Type</Name>
+        <CallbackMethod>actionSetDefaultHoldType</CallbackMethod>
         <ConfigUI>
         ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
                 <Label>Default Hold Type:</Label>

@@ -553,11 +553,11 @@ class Plugin(indigo.PluginBase):
     # Set Hold Type
     ########################################
     
-    def actionHoldTypeSetting(self, action, dev):
-        self.logger.debug(u"{}: actionHoldTypeSetting".format(dev.name))
+    def actionSetDefaultHoldType(self, action, dev):
+        self.logger.debug(u"{}: actionSetDefaultHoldType".format(dev.name))
          
         props = dev.pluginProps
-        props["holdType"] = action.props.get("holdType")
+        props["holdType"] = action.props.get("holdType", "nextTransition")
         dev.replacePluginPropsOnServer(props)                
  
  
