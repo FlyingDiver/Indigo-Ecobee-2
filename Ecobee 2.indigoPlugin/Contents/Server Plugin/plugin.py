@@ -360,7 +360,7 @@ class Plugin(indigo.PluginBase):
                                 "Type"         : 100 })
         
 
-        elif device_type == 'idtSmart':
+        elif device_type in ['idtSmart', 'siSmart']:
 
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
