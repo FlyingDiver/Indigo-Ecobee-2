@@ -29,12 +29,19 @@
                 <Label>Comfort Setting:</Label>
                  <List class="self" filter="" method="climateListGenerator" dynamicReload="true"/>
             </Field>
+        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
+                <Label>Hold Type:</Label>
+                <List>
+                    <Option value="nextTransition">Next Transition</Option>
+                    <Option value="indefinite">Indefinite</Option>
+                </List>
+            </Field>
         </ConfigUI>
     </Action>
 
     <Action id="holdTypeSetting" deviceFilter="self.EcobeeThermostat">
-        <Name>Set Hold Type</Name>
-        <CallbackMethod>actionHoldTypeSetting</CallbackMethod>
+        <Name>Set Default Hold Type</Name>
+        <CallbackMethod>actionSetDefaultHoldType</CallbackMethod>
         <ConfigUI>
         ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
                 <Label>Default Hold Type:</Label>

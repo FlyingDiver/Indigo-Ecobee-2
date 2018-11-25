@@ -360,7 +360,7 @@ class Plugin(indigo.PluginBase):
                                 "Type"         : 100 })
         
 
-        elif device_type == 'idtSmart':
+        elif device_type in ['idtSmart', 'siSmart']:
 
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
@@ -539,9 +539,10 @@ class Plugin(indigo.PluginBase):
     
     def actionActivateComfortSetting(self, action, dev):
         self.logger.debug(u"{}: actionActivateComfortSetting".format(dev.name))
-        holdType = dev.pluginProps.get("holdType", "nextTransition")
+        defaultHold = dev.pluginProps.get("holdType", "nextTransition")
 
         climate = action.props.get("climate")
+        holdType = action.props.get("holdType", defaultHold)
         self.active_devices[dev.id].set_climate_hold(climate, holdType)
 
     def climateListGenerator(self, filter, valuesDict, typeId, targetId):                                                                                                                 
@@ -552,11 +553,11 @@ class Plugin(indigo.PluginBase):
     # Set Hold Type
     ########################################
     
-    def actionHoldTypeSetting(self, action, dev):
-        self.logger.debug(u"{}: actionHoldTypeSetting".format(dev.name))
+    def actionSetDefaultHoldType(self, action, dev):
+        self.logger.debug(u"{}: actionSetDefaultHoldType".format(dev.name))
          
         props = dev.pluginProps
-        props["holdType"] = action.props.get("holdType")
+        props["holdType"] = action.props.get("holdType", "nextTransition")
         dev.replacePluginPropsOnServer(props)                
  
  
