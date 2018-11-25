@@ -568,10 +568,10 @@ class Plugin(indigo.PluginBase):
     def menuResumeAllPrograms(self):
         self.logger.debug(u"menuResumeAllPrograms")
         for devId, thermostat in self.active_devices.items():
-            if indigo.devices[devId].deviceTypeId in ['EcobeeThermostat', 'EcobeeSmartThermostat']:
+            if indigo.devices[devId].deviceTypeId == 'EcobeeThermostat':
                 thermostat.resume_program()
 
-    def menuResumeProgram(self):
+    def menuResumeProgram(self, valuesDict, typeId):
         self.logger.debug(u"menuResumeProgram")
         try:
             deviceId = int(valuesDict["targetDevice"])
@@ -584,7 +584,7 @@ class Plugin(indigo.PluginBase):
                 thermostat.resume_program()
         return True
         
-    def menuDumpThermostat(self):
+    def menuDumpThermostat(self, valuesDict, typeId):
         self.logger.debug(u"menuDumpThermostat")
         try:
             deviceId = int(valuesDict["targetDevice"])
@@ -601,13 +601,22 @@ class Plugin(indigo.PluginBase):
     def actionResumeAllPrograms(self, action, dev):
         self.logger.debug(u"actionResumeAllPrograms")
         for devId, thermostat in self.active_devices.items():
-            if indigo.devices[devId].deviceTypeId in ['EcobeeThermostat', 'EcobeeSmartThermostat']:
+            if indigo.devices[devId].deviceTypeId == 'EcobeeThermostat':
                 thermostat.resume_program()
 
     def actionResumeProgram(self, action, dev):
         self.logger.debug(u"{}: actionResumeProgram".format(dev.name))
         self.active_devices[dev.id].resume_program()
     
+    def pickThermostat(self, filter=None, valuesDict=None, typeId=0):
+        retList = []
+        for dev in indigo.devices.iter("self"):
+            if dev.deviceTypeId == 'EcobeeThermostat':
+                retList.append((dev.id, dev.name))
+        retList.sort(key=lambda tup: tup[1])
+        return retList
+
+
 
     ########################################
     # Process action request from Indigo Server to change main thermostat's main mode.

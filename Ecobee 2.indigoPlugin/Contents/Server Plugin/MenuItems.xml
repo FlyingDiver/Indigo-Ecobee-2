@@ -19,7 +19,7 @@
         <ConfigUI>
             <Field id="targetDevice" type="menu">
                 <Label>Select Thermostat:</Label>
-                <List class="self.EcobeeThermostat" filter="" dynamicReload="true"/>
+                <List class="self" filter="" method="pickThermostat" dynamicReload="true"/>
             </Field>
         </ConfigUI>
     </MenuItem>
@@ -30,7 +30,7 @@
         <ConfigUI>
             <Field id="targetDevice" type="menu">
                 <Label>Select Thermostat:</Label>
-                <List class="self.EcobeeThermostat" filter="" dynamicReload="true"/>
+                <List class="self" filter="" method="pickThermostat" dynamicReload="true"/>
             </Field>
         </ConfigUI>
     </MenuItem>

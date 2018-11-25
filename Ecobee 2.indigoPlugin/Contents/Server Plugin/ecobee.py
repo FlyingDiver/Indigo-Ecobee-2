@@ -205,7 +205,9 @@ class EcobeeAccount:
                                                 "desiredHeat"       : therm["runtime"]["desiredHeat"],
                                                 "actualTemperature" : therm["runtime"]["actualTemperature"],
                                                 "actualHumidity"    : therm["runtime"]["actualHumidity"],
-                                                "desiredFanMode"    : therm["runtime"]["desiredFanMode"] }
+                                                "desiredFanMode"    : therm["runtime"]["desiredFanMode"],
+                                                "rawData"           : therm
+                                            }
 
             if therm.get('events') and len(therm.get('events')) > 0:
                 latestEventType = therm.get('events')[0].get('type')
@@ -504,6 +506,12 @@ class EcobeeThermostat:
             (key, val)
             for key, val in self.ecobee.thermostats[self.address]["climates"].items()
         ]
+
+    def dump_data(self):
+
+        data = self.ecobee.thermostats[self.address]["rawData"]
+        self.logger.info(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+
 
     def update(self):
         
