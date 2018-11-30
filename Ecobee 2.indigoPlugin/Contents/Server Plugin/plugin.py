@@ -131,9 +131,11 @@ class Plugin(indigo.PluginBase):
                 
                     # update from Ecobee servers
                     
-                    for account in self.ecobee_accounts.values():
+                    for accountID, account in self.ecobee_accounts.items():
                         if account.authenticated:
                             account.server_update()
+                        else:
+                            self.logger.debug("Ecobee account {} not authenticated, skipping update".format(accountID))
                     
                     # now update all the Indigo devices         
                     
@@ -149,6 +151,8 @@ class Plugin(indigo.PluginBase):
                             account.do_token_refresh()                    
                             self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = account.refresh_token
                             self.savePluginPrefs()
+                        else:
+                            self.logger.error("Ecobee account {} not authenticated, skipping refresh".format(accountID))
 
                 self.sleep(2.0)
 

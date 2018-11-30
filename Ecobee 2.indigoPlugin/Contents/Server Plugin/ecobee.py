@@ -123,6 +123,7 @@ class EcobeeAccount:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:
             self.logger.error("Token Refresh Error, exception = {}".format(e))
+            self.next_refresh = time.time() + 300.0         # try again in five minutes
             return
             
         if request.status_code == requests.codes.ok:
@@ -132,22 +133,17 @@ class EcobeeAccount:
             self.logger.debug("Token Refresh OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
             self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
+            return
             
-        else:
-            self.authenticated = False
-            self.next_refresh = time.time() + 300.0         # try every five minutes
+        try:
+            error = request.json()['error']
+            if error == 'invalid_grant':
+                self.logger.error(u"{}: Authentication lost, please re-authenticate.'".format(self.dev.name))
+                self.authenticated = False                              
+        except:
+            pass
 
-            try:
-                error = request.json()['error']
-                if error == 'invalid_grant':
-                    self.logger.error(u"{}: Authentication lost, please re-authenticate.'".format(self.dev.name))
-                    self.next_refresh = time.time() + 300.0         # try every five minutes
-                    return
-                                  
-            except:
-                pass
-                
-            self.logger.error(u"{}: Token Refresh failed, response = '{}'".format(self.dev.name, request.text))                
+        self.next_refresh = time.time() + 300.0         # try again in five minutes
 
         
 #
