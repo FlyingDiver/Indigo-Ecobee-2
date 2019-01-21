@@ -277,6 +277,7 @@ class Plugin(indigo.PluginBase):
             newProps = newdev.pluginProps
             newProps["address"] = valuesDict["address"]
             newProps["account"] = valuesDict["account"]
+            newProps["holdType"] = valuesDict["holdType"]
             newdev.replacePluginPropsOnServer(newProps)                
 
         return

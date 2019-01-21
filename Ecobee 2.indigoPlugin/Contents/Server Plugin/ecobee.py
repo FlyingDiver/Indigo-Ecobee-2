@@ -130,7 +130,7 @@ class EcobeeAccount:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             expires_in = request.json()['expires_in']
-            self.logger.debug("Token Refresh OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
+            self.logger.debug("Token Refresh OK, new access_token = {}, new refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
             self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
             return
@@ -139,7 +139,10 @@ class EcobeeAccount:
             error = request.json()['error']
             if error == 'invalid_grant':
                 self.logger.error(u"{}: Authentication lost, please re-authenticate.'".format(self.dev.name))
-                self.authenticated = False                              
+                self.authenticated = False   
+            else:                           
+                self.logger.error("Token Refresh Error, error = {}".format(error))
+                self.next_refresh = time.time() + 300.0         # try again in five minutes
         except:
             pass
 
@@ -375,34 +378,40 @@ class EcobeeThermostat:
             
             remotes = thermostat.get("remotes")
             self.logger.debug(u"{}: {} remotes".format(dev.name, len(remotes)))
-                        
+                    
             remote_ids = indigo.Dict()
             self.remotes = []
-            
+        
             for code, rem in remotes.items():
-                
-                self.logger.info(u"Adding Remote Sensor {} to '{}' ({})".format(code, dev.name, dev.id))
 
-                remote_name = "{} Remote - {} ({})".format(dev.name, rem["name"], code)
-                newdev = indigo.device.create(indigo.kProtocol.Plugin, 
-                                                address=code,
-                                                name=remote_name,
-                                                deviceTypeId="RemoteSensor", 
-                                                groupWithDevice=dev.id,
-                                                props={ 'configDone': True, 
-                                                        'SupportsSensorValue': True,
-                                                        'SupportsStatusRequest': False,
-                                                        'account': self.dev.pluginProps["account"],
-                                                        'address': self.dev.pluginProps["address"]
-                                                    },
-                                                folder=dev.folderId)
-                newdev.model = dev.model
-                newdev.subModel = "Remote"
-                newdev.replaceOnServer()    
-                newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
-                remote_ids[code] = str(newdev.id)
-                self.remotes.append(newdev)
-                    
+                for rdev in indigo.devices.iter("self"):
+                    if rdev.deviceTypeId == 'RemoteSensor' and rdev.address == code:    # remote device already exists
+                        self.logger.debug(u"Remote sensor device {} already exists".format(rdev.address))
+                        self.remotes.append(rdev)
+                        break
+                else:
+            
+                    self.logger.info(u"Adding Remote Sensor {} to '{}' ({})".format(code, dev.name, dev.id))
+
+                    remote_name = "{} Remote - {} ({})".format(dev.name, rem["name"], code)
+                    newdev = indigo.device.create(indigo.kProtocol.Plugin, 
+                                                    address=code,
+                                                    name=remote_name,
+                                                    deviceTypeId="RemoteSensor", 
+                                                    props={ 'configDone': True, 
+                                                            'SupportsSensorValue': True,
+                                                            'SupportsStatusRequest': False,
+                                                            'account': self.dev.pluginProps["account"],
+                                                            'address': self.dev.pluginProps["address"]
+                                                        },
+                                                    folder=dev.folderId)
+                    newdev.model = dev.model
+                    newdev.subModel = "Remote"
+                    newdev.replaceOnServer()    
+                    newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
+                    remote_ids[code] = str(newdev.id)
+                    self.remotes.append(newdev)
+                
             newProps["remotes"] = remote_ids
             dev.replacePluginPropsOnServer(newProps)
            
@@ -435,7 +444,6 @@ class EcobeeThermostat:
                                                 address=code,
                                                 name=remote_name,
                                                 deviceTypeId="RemoteSensor", 
-                                                groupWithDevice=dev.id,
                                                 props={ 'configDone': True, 
                                                         'SupportsSensorValue': True,
                                                         'SupportsStatusRequest': False,
