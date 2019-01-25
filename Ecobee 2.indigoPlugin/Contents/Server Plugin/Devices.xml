@@ -10,6 +10,7 @@
                 <List>
                     <Option value="EcobeeAccount">Ecobee Account</Option>
                     <Option value="EcobeeThermostat">Ecobee Thermostat</Option>
+                    <Option value="RemoteSensor">Ecobee Remote Sensor</Option>
                 </List>
             </Field>
              <Field id="separator1" type="separator"/>
@@ -53,14 +54,20 @@
                 <List class="self" method="get_thermostat_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
-        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
+        ￼   <Field type="menu" id="holdType" defaultValue="nextTransition" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
                 <Label>Default Hold Type:</Label>
                 <List>
                     <Option value="nextTransition">Next Transition</Option>
                     <Option value="indefinite">Indefinite</Option>
-                    <Option value="holdHours">Hold Hours</Option>
-                    <Option value="dateTime">Date-Time</Option>
                 </List>
+            </Field>
+            <Field type="checkbox" id="createRemotes" defaultValue="true" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label>Create Remote Sensor devices:</Label>
+            </Field>            
+            <Field id="sensor_code" type="menu" visibleBindingId="deviceType" visibleBindingValue="RemoteSensor">
+                <Label>Thermostat:</Label>
+                <List class="self" method="get_sensor_list" dynamicReload="true"/>
+                <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
         </ConfigUI>
     </DeviceFactory>
@@ -129,6 +136,9 @@
                     <Option value="indefinite">Indefinite</Option>
                 </List>
             </Field>
+            <Field type="checkbox" id="createRemotes" defaultValue="true">
+                <Label>Create Remote Sensor devices:</Label>
+            </Field>            
         </ConfigUI>
     </Device>
 
