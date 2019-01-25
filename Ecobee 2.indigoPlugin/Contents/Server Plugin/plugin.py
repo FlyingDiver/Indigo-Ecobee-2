@@ -142,6 +142,9 @@ class Plugin(indigo.PluginBase):
                     for dev in self.ecobee_thermostats.values():
                         dev.update()
                     
+                    for dev in self.ecobee_remotes.values():
+                        dev.update()
+                    
 
                 # Refresh the auth tokens as needed.  Refresh interval for each account is calculated during the refresh
                 
@@ -465,6 +468,8 @@ class Plugin(indigo.PluginBase):
                 indigo.rawServerCommand("ReplaceDevice", {"ID": dev.id, "Device": rawDev})
                 self.logger.debug(u"{}: Removed remote sensor from device group".format(dev.name))
             ###################
+
+            self.logger.debug(u"{}: starting RemoteSensor device:\n{}".format(dev.name, dev))
             
 
     def deviceStopComm(self, dev):
@@ -480,7 +485,7 @@ class Plugin(indigo.PluginBase):
                 del self.ecobee_accounts[dev.id]
             
         elif dev.deviceTypeId == 'RemoteSensor':
-            self.logger.debug(u"{}: Disabling remote sensor, dev =\n{}".format(dev.name, dev))
+            self.logger.threaddebug(u"{}: Disabling remote sensor, dev =\n{}".format(dev.name, dev))
             
                      
 #    Authentication Step 1, called from Devices.xml

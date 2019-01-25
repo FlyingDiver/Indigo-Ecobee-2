@@ -8,7 +8,6 @@ import logging
 
 import temperature_scale
 import indigo
-import ecobee
 
 
 ECOBEE_MODELS = {
@@ -189,60 +188,58 @@ class EcobeeAccount:
         # Extract the relevant info from the server data and put it in a convenient Dict form
         
         for therm in serverData:
-        
-            identifier = therm["identifier"]
-            
-            self.thermostats[identifier] = {    "name"              : therm["name"], 
-                                                "brand"             : therm["brand"], 
-                                                "features"          : therm["features"], 
-                                                "modelNumber"       : therm["modelNumber"],
-                                                "equipmentStatus"   : therm["equipmentStatus"],
-                                                "currentClimate"    : therm["program"]["currentClimateRef"],
-                                                "hvacMode"          : therm["settings"]["hvacMode"],
-                                                "fanMinOnTime"      : therm["settings"]["fanMinOnTime"],
-                                                "desiredCool"       : therm["runtime"]["desiredCool"],
-                                                "desiredHeat"       : therm["runtime"]["desiredHeat"],
-                                                "actualTemperature" : therm["runtime"]["actualTemperature"],
-                                                "actualHumidity"    : therm["runtime"]["actualHumidity"],
-                                                "desiredFanMode"    : therm["runtime"]["desiredFanMode"],
-                                                "rawData"           : therm
-                                            }
+                    
+            self.thermostats[therm["identifier"]] = {    
+                "name"              : therm["name"], 
+                "brand"             : therm["brand"], 
+                "features"          : therm["features"], 
+                "modelNumber"       : therm["modelNumber"],
+                "equipmentStatus"   : therm["equipmentStatus"],
+                "currentClimate"    : therm["program"]["currentClimateRef"],
+                "hvacMode"          : therm["settings"]["hvacMode"],
+                "fanMinOnTime"      : therm["settings"]["fanMinOnTime"],
+                "desiredCool"       : therm["runtime"]["desiredCool"],
+                "desiredHeat"       : therm["runtime"]["desiredHeat"],
+                "actualTemperature" : therm["runtime"]["actualTemperature"],
+                "actualHumidity"    : therm["runtime"]["actualHumidity"],
+                "desiredFanMode"    : therm["runtime"]["desiredFanMode"],
+                "rawData"           : therm
+            }
 
             if therm.get('events') and len(therm.get('events')) > 0:
                 latestEventType = therm.get('events')[0].get('type')
             else:
                 latestEventType = None
-            self.thermostats[identifier]["latestEventType"] = latestEventType
+            self.thermostats[therm["identifier"]]["latestEventType"] = latestEventType
 
             climates = {}
             for c in therm["program"]["climates"]:
                 climates[c["climateRef"]] = c["name"]
-            self.thermostats[identifier]["climates"] = climates
+            self.thermostats[therm["identifier"]]["climates"] = climates
                 
             remotes = {}
             for remote in therm[u"remoteSensors"]:
 
                 if remote["type"] == "ecobee3_remote_sensor":
-                    code = remote[u"code"]
-                    self.sensors[code] = remote[u"name"]
-                    remotes[code] = {u"name": remote[u"name"]}
+                    remotes[remote[u"code"]] = {u"name": remote[u"name"]}
                     for cap in remote["capability"]:
-                        remotes[code][cap["type"]] = cap["value"]
+                        remotes[remote[u"code"]][cap["type"]] = cap["value"]
+                    self.sensors[remote[u"code"]] = remotes[remote[u"code"]]
 
                 elif remote["type"] == "thermostat":
                     internal = {}
                     for cap in remote["capability"]:
                         internal[cap["type"]] = cap["value"]
-                    self.thermostats[identifier]["internal"] = internal
+                    self.thermostats[therm["identifier"]]["internal"] = internal
 
                 elif remote["type"] == "monitor_sensor":
                     internal = {}
                     for cap in remote["capability"]:
                         if cap["type"] == "occupancy":
                                 internal[cap["type"]] = cap["value"]
-                    self.thermostats[identifier]["internal"] = internal
+                    self.thermostats[therm["identifier"]]["internal"] = internal
 
-            self.thermostats[identifier]["remotes"] = remotes
+            self.thermostats[therm["identifier"]]["remotes"] = remotes
             
         self.logger.threaddebug("Thermostat Update, thermostats =\n"+json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')))
                 
@@ -297,7 +294,7 @@ class EcobeeThermostat:
         self.ecobee = None
         
         
-        self.logger.debug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+        self.logger.threaddebug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
         configDone = dev.pluginProps.get('configDone', False)
         if configDone:
@@ -322,7 +319,7 @@ class EcobeeThermostat:
                 self.remotes = None
                 self.logger.debug(u"{}: no remotes".format(dev.name))
 
-            self.logger.debug(u"{}: EcobeeThermostat __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+            self.logger.threaddebug(u"{}: EcobeeThermostat __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
             return
 
         try:
@@ -510,7 +507,7 @@ class EcobeeThermostat:
             newProps["ShowCoolHeatEquipmentStateUI"] = True
             dev.replacePluginPropsOnServer(newProps)
 
-        self.logger.debug(u"{}: EcobeeThermostat __init__ completed, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+        self.logger.threaddebug(u"{}: EcobeeThermostat __init__ completed, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
                 
     def get_climates(self):
