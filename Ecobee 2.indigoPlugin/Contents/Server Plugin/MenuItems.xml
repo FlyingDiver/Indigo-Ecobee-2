@@ -27,12 +27,6 @@
     <MenuItem id="menu3">
         <Name>Write Thermostat Data to Log</Name>
         <CallbackMethod>menuDumpThermostat</CallbackMethod>
-        <ConfigUI>
-            <Field id="targetDevice" type="menu">
-                <Label>Select Thermostat:</Label>
-                <List class="self" filter="" method="pickThermostat" dynamicReload="true"/>
-            </Field>
-        </ConfigUI>
     </MenuItem>
 </MenuItems>
 

@@ -5,6 +5,8 @@
         <Name>Create Ecobee 2 Device</Name>
         <ButtonTitle>Create</ButtonTitle>
         <ConfigUI>
+
+        <!-- Factory Device Type Selection -->
         ￼   <Field type="menu" id="deviceType" defaultValue="EcobeeAccount">
                 <Label>Device Type:</Label>
                 <List>
@@ -12,9 +14,11 @@
                     <Option value="EcobeeThermostat">Ecobee Thermostat</Option>
                     <Option value="RemoteSensor">Ecobee Remote Sensor</Option>
                 </List>
+                <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
              <Field id="separator1" type="separator"/>
            
+        <!-- Ecobee Account Device -->
             <Field id="getPin" type="button" visibleBindingId="deviceType" visibleBindingValue="EcobeeAccount">
                 <Label>1. Get an Ecobee auth code:</Label>
                 <Title>Get Code</Title>
@@ -44,14 +48,15 @@
                 <Label>Authentication Status:</Label>
             </Field>
 
-            <Field id="account" type="menu" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+        <!-- Ecobee Thermostat or Remote Sensor Device -->
+            <Field id="account" type="menu" visibleBindingId="deviceType" visibleBindingValue="(EcobeeThermostat, RemoteSensor)">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
-            <Field id="address" type="menu" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
-                <Label>Thermostat:</Label>
-                <List class="self" method="get_thermostat_list" dynamicReload="true"/>
+            <Field id="address" type="menu" visibleBindingId="deviceType" visibleBindingValue="(EcobeeThermostat, RemoteSensor)">
+                <Label>Ecobee Device:</Label>
+                <List class="self" method="get_device_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
         ￼   <Field type="menu" id="holdType" defaultValue="nextTransition" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
@@ -64,11 +69,16 @@
             <Field type="checkbox" id="createRemotes" defaultValue="true" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
                 <Label>Create Remote Sensor devices:</Label>
             </Field>            
-            <Field id="sensor_code" type="menu" visibleBindingId="deviceType" visibleBindingValue="RemoteSensor">
-                <Label>Thermostat:</Label>
-                <List class="self" method="get_sensor_list" dynamicReload="true"/>
-                <CallbackMethod>menuChanged</CallbackMethod>
+            <Field id="spacer1" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label> </Label>
             </Field>
+            <Field id="spacer2" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label> </Label>
+            </Field>
+            <Field id="spacer3" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="deviceType" visibleBindingValue="EcobeeThermostat">
+                <Label> </Label>
+            </Field>
+                        
         </ConfigUI>
     </DeviceFactory>
 
@@ -119,6 +129,7 @@
     <Device type="thermostat" id="EcobeeThermostat">
         <Name>Ecobee Thermostat</Name>
         <ConfigUI>
+            <Field id="SupportsStatusRequest" type="checkbox" defaultValue="false" hidden="true" />
             <Field id="account" type="menu">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
@@ -136,9 +147,6 @@
                     <Option value="indefinite">Indefinite</Option>
                 </List>
             </Field>
-            <Field type="checkbox" id="createRemotes" defaultValue="true">
-                <Label>Create Remote Sensor devices:</Label>
-            </Field>            
         </ConfigUI>
     </Device>
 

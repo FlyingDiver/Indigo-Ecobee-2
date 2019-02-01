@@ -1,0 +1,344 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import requests
+import json
+import time
+import logging
+
+import temperature_scale
+import indigo
+
+
+HVAC_MODE_MAP = {
+    'heat'        : indigo.kHvacMode.Heat,
+    'cool'        : indigo.kHvacMode.Cool,
+    'auto'        : indigo.kHvacMode.HeatCool,
+    'auxHeatOnly' : indigo.kHvacMode.Heat,
+    'off'         : indigo.kHvacMode.Off
+    }
+
+FAN_MODE_MAP = {
+    'auto': indigo.kFanMode.Auto,
+    'on'  : indigo.kFanMode.AlwaysOn
+    }
+
+
+class EcobeeThermostat:
+
+    temperatureFormatter = temperature_scale.Fahrenheit()
+
+    def __init__(self, dev):
+        self.logger = logging.getLogger('Plugin.ecobee_devices')
+        self.dev = dev
+        self.address = dev.address
+        self.ecobee = None
+        
+        self.logger.debug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+
+        occupancy_id = dev.pluginProps.get('occupancy', None)
+        if occupancy_id:
+            self.logger.debug(u"{}: adding occupancy device {}".format(dev.name, occupancy_id))
+            self.occupancy = indigo.devices[occupancy_id]
+        else:
+            self.logger.debug(u"{}: no occupancy device".format(dev.name))
+            self.occupancy = None
+            
+        self.logger.debug(u"{}: EcobeeThermostat __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+        return
+
+                
+    def get_climates(self):
+        return [
+            (key, val)
+            for key, val in self.ecobee.thermostats[self.address]["climates"].items()
+        ]
+
+    def update(self):
+        
+        # has the Ecobee account been initialized yet?
+        if not self.ecobee:
+            self.logger.debug(u"{}: update() needs to configure ecobee device".format(self.dev.name))
+
+            if len(indigo.activePlugin.ecobee_accounts) == 0:
+                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
+                return
+            
+            try:
+                accountID = int(self.dev.pluginProps["account"])
+                self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+                self.logger.debug(u"{}: Ecobee device assigned, {}".format(self.dev.name, accountID))
+            except:
+                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                return
+            
+            if not self.ecobee.authenticated:
+                self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
+                return
+
+        thermostat_data = self.ecobee.thermostats[self.address]
+        if not thermostat_data:
+            self.logger.debug("update: no thermostat data found for address {}".format(self.address))
+            return
+        
+        update_list = []
+        
+        self.name = thermostat_data.get('name')
+
+        device_type = thermostat_data.get('modelNumber')
+        self.dev.updateStateOnServer(key="device_type", value=device_type)
+        
+        update_list.append({'key' : "device_type", 'value' : device_type})
+        
+        hsp = thermostat_data.get('desiredHeat')
+        update_list.append({'key'           : "setpointHeat", 
+                            'value'         : EcobeeThermostat.temperatureFormatter.convert(hsp), 
+                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(hsp),
+                            'decimalPlaces' : 1})
+
+        csp = thermostat_data.get('desiredCool')
+        update_list.append({'key'           : "setpointCool", 
+                            'value'         : EcobeeThermostat.temperatureFormatter.convert(csp), 
+                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(csp),
+                            'decimalPlaces' : 1})
+
+        dispTemp = thermostat_data.get('actualTemperature')
+        update_list.append({'key'           : "temperatureInput1", 
+                            'value'         : EcobeeThermostat.temperatureFormatter.convert(dispTemp), 
+                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(dispTemp),
+                            'decimalPlaces' : 1})
+
+
+        climate = thermostat_data.get('currentClimate')
+        update_list.append({'key' : "climate", 'value' : climate})
+
+        hvacMode = thermostat_data.get('hvacMode')
+        update_list.append({'key' : "hvacOperationMode", 'value' : HVAC_MODE_MAP[hvacMode]})
+
+        fanMode = thermostat_data.get('desiredFanMode')
+        update_list.append({'key' : "hvacFanMode", 'value' : int(FAN_MODE_MAP[fanMode])})
+
+        hum = thermostat_data.get('actualHumidity')
+        update_list.append({'key' : "humidityInput1", 'value' : float(hum)})
+        
+        fanMinOnTime = thermostat_data.get('fanMinOnTime')
+        update_list.append({'key' : "fanMinOnTime", 'value' : fanMinOnTime})
+
+        status = thermostat_data.get('equipmentStatus')
+        update_list.append({'key' : "equipmentStatus", 'value' : status})
+
+        val = bool(status and ('heatPump' in status or 'auxHeat' in status))
+        update_list.append({'key' : "hvacHeaterIsOn", 'value' : val})
+
+        val = bool(status and ('compCool' in status))
+        update_list.append({'key' : "hvacCoolerIsOn", 'value' : val})
+
+        val = bool(status and ('fan' in status or 'ventilator' in status))
+        update_list.append({'key' : "hvacFanIsOn", 'value' : val})
+        
+        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart']:
+        
+            temp2 = thermostat_data.get('internal').get('temperature')
+            update_list.append({'key'           : "temperatureInput2", 
+                                'value'         : EcobeeThermostat.temperatureFormatter.convert(temp2), 
+                                'uiValue'       : EcobeeThermostat.temperatureFormatter.format(temp2),
+                                'decimalPlaces' : 1})
+
+            latestEventType = thermostat_data.get('latestEventType')
+            update_list.append({'key': "autoHome", 'value' : bool(latestEventType and ('autoHome' in latestEventType))})
+            update_list.append({'key': "autoAway", 'value' : bool(latestEventType and ('autoAway' in latestEventType))})
+
+        self.dev.updateStatesOnServer(update_list)
+
+
+        if self.occupancy:
+        
+            occupied = thermostat_data.get('internal').get('occupancy')
+            self.occupancy.updateStateOnServer(key="onOffState", value = occupied)
+            if occupied == u'true' or occupied == u'1':
+                self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
+            else:
+                self.occupancy.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
+
+
+
+    def set_hvac_mode(self, hvac_mode):     # possible hvac modes are auto, auxHeatOnly, cool, heat, off 
+        body =  {
+                    "selection": 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "thermostat" : 
+                    {
+                        "settings": 
+                        {
+                            "hvacMode": hvac_mode
+                        }
+                    }
+                }
+        log_msg_action = "set HVAC mode"
+        self.ecobee.make_request(body, log_msg_action)
+
+
+    def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
+        body =  {
+                    "selection": 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "functions": 
+                    [
+                        {
+                            "type"   : "setHold", 
+                            "params" : 
+                            {
+                                "holdType": hold_type,
+                                "coolHoldTemp": int(cool_temp * 10),
+                                "heatHoldTemp": int(heat_temp * 10)
+                            }
+                        }
+                    ]
+                }
+        log_msg_action = "set hold temp"
+        self.ecobee.make_request(body, log_msg_action)
+
+    def set_hold_temp_with_fan(self, cool_temp, heat_temp, hold_type="nextTransition"):     # Set a fan hold
+        body =  {
+                    "selection" : 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "functions" : 
+                    [
+                        {
+                            "type"   : "setHold", 
+                            "params" : 
+                            {
+                                "holdType"     : hold_type,
+                                "coolHoldTemp" : int(cool_temp * 10),
+                                "heatHoldTemp" : int(heat_temp * 10),
+                                "fan"          : "on"
+                            }
+                        }
+                    ]
+                }
+        log_msg_action = "set hold temp with fan on"
+        self.ecobee.make_request(body, log_msg_action)
+
+    def set_climate_hold(self, climate, hold_type="nextTransition"):    # Set a climate hold - ie away, home, sleep
+        body =  {
+                    "selection" : 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "functions" : 
+                    [
+                        {
+                            "type"   : "setHold", 
+                            "params" : 
+                            {
+                                "holdType"       : hold_type,
+                                "holdClimateRef" : climate
+                            }
+                        }
+                    ]
+                }
+        log_msg_action = "set climate hold"
+        self.ecobee.make_request(body, log_msg_action)
+
+    def resume_program(self):   # Resume currently scheduled program
+        body =  {
+                    "selection" : 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "functions" : 
+                    [
+                        {
+                            "type"   : "resumeProgram", 
+                            "params" : 
+                            {
+                                "resumeAll": "False"
+                            }
+                        }
+                    ]
+                }
+        log_msg_action = "resume program"
+        self.ecobee.make_request(body, log_msg_action)
+
+
+class RemoteSensor:
+
+    temperatureFormatter = temperature_scale.Fahrenheit()
+
+    def __init__(self, dev):
+        self.logger = logging.getLogger('Plugin.ecobee_devices')
+        self.dev = dev
+        self.address = dev.address
+        self.ecobee = None
+        
+        self.logger.threaddebug(u"{}: RemoteSensor __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+
+        remote_list = dev.pluginProps.get('remotes', None)
+        if remote_list and len(remote_list) > 0:
+            self.logger.debug(u"{}: adding {} remotes".format(dev.name, len(remote_list)))
+            self.remotes = {}
+            for code, rem_id in remote_list.items():
+                self.remotes[code] = indigo.devices[int(rem_id)]
+        else:
+            self.remotes = None
+            self.logger.debug(u"{}: no remotes".format(dev.name))
+
+        self.logger.threaddebug(u"{}: RemoteSensor __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+        return
+
+
+    def update(self):
+        
+        # has the Ecobee account been initialized yet?
+        if not self.ecobee:
+            self.logger.debug(u"{}: update() needs to configure ecobee device".format(self.dev.name))
+
+            if len(indigo.activePlugin.ecobee_accounts) == 0:
+                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
+                return
+            
+            try:
+                accountID = int(self.dev.pluginProps["account"])
+                self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
+                self.logger.debug(u"{}: Ecobee device assigned, {}".format(self.dev.name, accountID))
+            except:
+                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                return
+            
+            if not self.ecobee.authenticated:
+                self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
+                return
+         
+        remote_sensor = self.ecobee.sensors[self.address]
+        if not thermostat:
+            self.logger.debug("update: no thermostat data found for address {}".format(self.address))
+            return
+                
+        occupied = thermostat.get('remotes').get(code).get('occupancy')
+        remote.updateStateOnServer(key="onOffState", value = occupied)
+        if occupied == u'true':
+            remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
+        else:
+            remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
+       
+        temp = thermostat.get('remotes').get(code).get('temperature')
+        
+        # check for non-digit values returned when remote is not responding
+        if temp.isdigit():
+            remote.updateStateOnServer( key     = "sensorValue", 
+                                        value   = EcobeeThermostat.temperatureFormatter.convert(temp), 
+                                        uiValue = EcobeeThermostat.temperatureFormatter.format(temp),
+                                        decimalPlaces = 1)
+
+
