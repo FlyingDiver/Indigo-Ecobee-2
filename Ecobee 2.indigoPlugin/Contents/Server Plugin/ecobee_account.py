@@ -137,19 +137,19 @@ class EcobeeAccount:
         try:
             request = requests.get('https://api.ecobee.com/1/thermostat', headers=header, params=params)
         except requests.RequestException, e:
-            self.logger.error("Ecobee Account Update Error, exception = {}".format(e))
+            self.logger.error(u"{}: Ecobee Account Update Error, exception = {}".format(self.dev.name, e))
             return
             
         if request.status_code != requests.codes.ok:
-            self.logger.error("Ecobee Account Update failed, response = '{}'".format(request.text))                
+            self.logger.error(u"{}: Ecobee Account Update failed, response = '{}'".format(self.dev.name, request.text))                
             return
             
         stat_data = request.json()['thermostatList']
         status = request.json()['status']
         if status["code"] == 0:
-            self.logger.debug("Ecobee Account Update OK, got info on {} thermostats".format(len(stat_data)))
+            self.logger.debug(u"{}: Ecobee Account Update OK, got info on {} thermostats".format(self.dev.name, len(stat_data)))
         else:
-            self.logger.warning("Ecobee Account Update Error, code  = {}, message = {}.".format(status["code"], status["message"]))
+            self.logger.warning(u"{}: Ecobee Account Update Error, code  = {}, message = {}.".format(self.dev.name, status["code"], status["message"]))
             return
 
         self.logger.threaddebug(json.dumps(stat_data, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -157,6 +157,7 @@ class EcobeeAccount:
         # Extract the relevant info from the server data and put it in a convenient Dict form
         
         for therm in stat_data:
+            self.logger.debug(u"{}: getting data for '{}', {}".format(self.dev.name, therm[u"name"], therm[u"identifier"]))
             
             identifier = therm["identifier"]
             self.thermostats[identifier] = {    
@@ -185,14 +186,17 @@ class EcobeeAccount:
                 climates[c["climateRef"]] = c["name"]
             self.thermostats[identifier]["climates"] = climates
                 
+            remotes = {}
             for remote in therm[u"remoteSensors"]:
 
                 if remote["type"] == "ecobee3_remote_sensor":
+                    self.logger.debug(u"{}: getting data for remote sensor '{}', {}".format(self.dev.name, remote[u"name"], remote[u"code"]))
                     code = remote[u"code"]
                     remote_data = {u"name" : remote[u"name"], u"thermostat" : identifier}
                     for cap in remote["capability"]:
                         remote_data[cap["type"]] = cap["value"]
                     self.sensors[code] = remote_data
+                    remotes[code] = remote_data
 
                 elif remote["type"] == "thermostat":
                     internal = {}
@@ -207,6 +211,7 @@ class EcobeeAccount:
                             internal[cap["type"]] = cap["value"]
                     self.thermostats[identifier]["internal"] = internal
 
+            self.thermostats[identifier]["remotes"] = remotes
             
         self.logger.threaddebug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
                                                                                               json.dumps(self.sensors, sort_keys=True, indent=4, separators=(',', ': '))))

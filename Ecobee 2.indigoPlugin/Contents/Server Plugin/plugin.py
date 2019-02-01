@@ -17,6 +17,7 @@ TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"
 
 ECOBEE_MODELS = {
+    'Unknown'     :    'Unknown Device',
     'idtSmart'    :    'ecobee Smart',
     'siSmart'     :    'ecobee Si Smart',
     'athenaSmart' :    'ecobee3 Smart',
@@ -132,6 +133,7 @@ class Plugin(indigo.PluginBase):
     ########################################
         
     def runConcurrentThread(self):
+        self.logger.debug(u"runConcurrentThread starting")
         try:
             while True:
                 
@@ -172,6 +174,7 @@ class Plugin(indigo.PluginBase):
                 self.sleep(2.0)
 
         except self.StopThread:
+            self.logger.debug(u"runConcurrentThread ending")
             pass
 
                 
@@ -278,7 +281,7 @@ class Plugin(indigo.PluginBase):
                 valid = False
             
             if len(valuesDict["address"]) == 0:
-                errorsDict["account"] = "No Thermostat Specified"
+                errorsDict["address"] = "No Thermostat Specified"
                 self.logger.warning("validateDeviceFactoryUi - No Thermostat Specified")
                 valid = False              
 
@@ -289,7 +292,7 @@ class Plugin(indigo.PluginBase):
                 valid = False
             
             if len(valuesDict["address"]) == 0:
-                errorsDict["account"] = "No Sensor Specified"
+                errorsDict["address"] = "No Sensor Specified"
                 self.logger.warning("validateDeviceFactoryUi - No Sensor Specified")
                 valid = False              
 
@@ -304,9 +307,10 @@ class Plugin(indigo.PluginBase):
     def closedDeviceFactoryUi(self, valuesDict, userCancelled, devIdList):
         
         if userCancelled:
+            self.logger.debug("closedDeviceFactoryUi: user cancelled")
             return
 
-        self.logger.debug("closedDeviceFactoryUi: valuesDict = {}, devIdList = {}".format(valuesDict, devIdList))
+        self.logger.debug("closedDeviceFactoryUi: valuesDict =\n{}\ndevIdList =\n{}".format(valuesDict, devIdList))
             
         if valuesDict["deviceType"] == "EcobeeAccount":
         
@@ -320,12 +324,12 @@ class Plugin(indigo.PluginBase):
         elif valuesDict["deviceType"] == "EcobeeThermostat":
         
             address = valuesDict["address"]
-            device_type = valuesDict["deviceType"]
 
             ecobee = self.ecobee_accounts[valuesDict["account"]]
             thermostat = ecobee.thermostats.get(address)
-            name = "Ecobee {} ({})".format(thermostat.get('name'), address)
-            
+            name = "Ecobee {}".format(thermostat.get('name'))            
+            device_type = thermostat.get('modelNumber', 'Unknown')
+
             dev = indigo.device.create(indigo.kProtocol.Plugin, address = address, name = name, deviceTypeId="EcobeeThermostat")
             dev.model = "Ecobee Thermostat"
             dev.subModel = ECOBEE_MODELS[device_type]
@@ -351,67 +355,60 @@ class Plugin(indigo.PluginBase):
                 self.logger.info(u"Adding Occupancy Sensor '{}' to '{}'".format(sensor_name, dev.name))
                 newdev = indigo.device.create(indigo.kProtocol.Plugin, address = dev.address, name = sensor_name,
                             deviceTypeId = "OccupancySensor", groupWithDevice = dev.id, folder = dev.folderId, 
-                            props = { 'SupportsStatusRequest': False, 'account': self.dev.pluginProps["account"] })   
+                            props = { 'SupportsStatusRequest': False, 'account': valuesDict["account"] })   
                 newdev.model = dev.model
                 newdev.subModel = "Occupancy"
                 newdev.replaceOnServer()    
 
-                self.occupancy = newdev
                 newProps["occupancy"] = newdev.id
             
             if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart']:        # Supports linked remote sensors
             
                 remotes = thermostat.get("remotes")
                 self.logger.debug(u"{}: {} remotes".format(dev.name, len(remotes)))
-                    
-                remote_ids = indigo.Dict()
-                self.remotes = []
+                
+                if valuesDict["createRemotes"] == False:
+                    self.logger.debug(u"{}: Not creating remotes".format(dev.name))
+                
+                else:       # create Indigo devices for all the linked remotes
+                
+                    remote_ids = indigo.Dict()
         
-                for code, rem in remotes.items():
+                    for code, rem in remotes.items():
 
-                    for rdev in indigo.devices.iter("self"):
-                        if rdev.deviceTypeId == 'RemoteSensor' and rdev.address == code:    # remote device already exists
-                            self.logger.debug(u"Remote sensor device {} already exists".format(rdev.address))
-                            self.remotes.append(rdev)
-                    else:
+                        for rdev in indigo.devices.iter("self"):
+                            if rdev.deviceTypeId == 'RemoteSensor' and rdev.address == code:    # remote device already exists
+                                self.logger.debug(u"Remote sensor device {} already exists".format(rdev.address))
+                        else:
         
-                        remote_name = "{} Remote - {}".format(dev.name, rem["name"])
-                        self.logger.info(u"Adding Remote Sensor '{}' to '{}'".format(remote_name, dev.name))
-                        newdev = indigo.device.create(indigo.kProtocol.Plugin, address = code, name = remote_name,
-                                    deviceTypeId="RemoteSensor", folder=dev.folderId, 
-                                    props={ 'SupportsSensorValue': True, 'SupportsStatusRequest': False, 'account': self.dev.pluginProps["account"] })
-                        newdev.model = dev.model
-                        newdev.subModel = "Remote"
-                        newdev.replaceOnServer()
-                        newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
-                        remote_ids[code] = str(newdev.id)
-                        self.remotes.append(newdev)
+                            remote_name = "{} Remote - {}".format(dev.name, rem["name"])
+                            self.logger.info(u"Adding Remote Sensor '{}' to '{}'".format(remote_name, dev.name))
+                            newdev = indigo.device.create(indigo.kProtocol.Plugin, address = code, name = remote_name,
+                                        deviceTypeId="RemoteSensor", folder=dev.folderId, 
+                                        props={ 'SupportsSensorValue': True, 'SupportsStatusRequest': False, 'account': valuesDict["account"] })
+                            newdev.model = dev.model
+                            newdev.subModel = "Remote"
+                            newdev.replaceOnServer()
+                            newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
+                            remote_ids[code] = str(newdev.id)
             
-                    newProps["remotes"] = remote_ids
+                        newProps["remotes"] = remote_ids
            
             dev.replacePluginPropsOnServer(newProps)
 
         elif valuesDict["deviceType"] == "RemoteSensor":
+
+            address = valuesDict["address"]
+            ecobee = self.ecobee_accounts[valuesDict["account"]]
+            remote_name = ecobee.sensors.get(address).get('name')
+            thermostat_id = ecobee.sensors.get(address).get("thermostat")
+            thermostat_name = ecobee.thermostats.get(thermostat_id).get('name')     
+            name = "Ecobee {} Remote - {}".format(thermostat_name, remote_name)
         
-            newdev = indigo.device.create(indigo.kProtocol.Plugin, deviceTypeId="RemoteSensor")
+            newdev = indigo.device.create(indigo.kProtocol.Plugin, address = valuesDict["address"], name = name, deviceTypeId="RemoteSensor", 
+                        props = { 'SupportsStatusRequest': False, 'SupportsSensorValue': True, 'SupportsSensorValue': True, 'account': valuesDict["account"]})
             newdev.model = "Ecobee Remote Sensor"
             newdev.replaceOnServer()
-
-            newProps = dev.pluginProps
-            newProps["device_type"] = device_type
-            newProps["configDone"] = True
-            newProps["SupportsSensorValue"] = True
-            newProps["SupportsStatusRequest"] = False            
-
-            device_type = thermostat.get('modelNumber')
-            name = thermostat.get('name')
-            remote_name = "{} Remote - {}".format(dev.name, rem["name"])
-
-            dev.name = "Ecobee {} ({})".format(name, self.address)
-            dev.model = dev.model
-            dev.subModel = "Remote"
-            dev.replaceOnServer()
-            dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
 
         self.logger.debug("closedDeviceFactoryUi complete, pluginProps =\n{}".format(newdev.pluginProps))
@@ -545,16 +542,6 @@ class Plugin(indigo.PluginBase):
             self.ecobee_thermostats[dev.id] = EcobeeThermostat(dev)
             self.update_needed = True
             
-            ### fixup code ###
-            for code, dev_id in self.dev.pluginProps["remotes"]:
-                remote = indigo.devices[dev_id]
-                if len(remote.address) > 4:
-                    newProps = remote.pluginProps
-                    newProps["address"] = code
-                    remote.replacePluginPropsOnServer(newProps)                
-                    self.logger.debug(u"{}: Updated address for remote sensor {}".format(self.dev.name, code))
-            ###################
-
         elif dev.deviceTypeId == 'OccupancySensor':
 
             pass

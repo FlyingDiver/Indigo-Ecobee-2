@@ -34,7 +34,7 @@ class EcobeeThermostat:
         self.address = dev.address
         self.ecobee = None
         
-        self.logger.debug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+        self.logger.threaddebug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
         occupancy_id = dev.pluginProps.get('occupancy', None)
         if occupancy_id:
@@ -44,7 +44,6 @@ class EcobeeThermostat:
             self.logger.debug(u"{}: no occupancy device".format(dev.name))
             self.occupancy = None
             
-        self.logger.debug(u"{}: EcobeeThermostat __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
         return
 
                 
@@ -55,10 +54,11 @@ class EcobeeThermostat:
         ]
 
     def update(self):
+
+        self.logger.debug(u"{}: Updating device".format(self.dev.name))
         
         # has the Ecobee account been initialized yet?
         if not self.ecobee:
-            self.logger.debug(u"{}: update() needs to configure ecobee device".format(self.dev.name))
 
             if len(indigo.activePlugin.ecobee_accounts) == 0:
                 self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
@@ -67,7 +67,7 @@ class EcobeeThermostat:
             try:
                 accountID = int(self.dev.pluginProps["account"])
                 self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-                self.logger.debug(u"{}: Ecobee device assigned, {}".format(self.dev.name, accountID))
+                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.dev.name, accountID))
             except:
                 self.logger.error(u"updatable: Error obtaining ecobee account object")
                 return
@@ -80,6 +80,20 @@ class EcobeeThermostat:
         if not thermostat_data:
             self.logger.debug("update: no thermostat data found for address {}".format(self.address))
             return
+        
+        ### fixup code ###
+        try:
+            for code, dev_id in self.dev.pluginProps["remotes"].items():
+                remote = indigo.devices[int(dev_id)]
+                if len(remote.address) > 4:
+                    newProps = remote.pluginProps
+                    newProps["address"] = code
+                    remote.replacePluginPropsOnServer(newProps)                
+                    self.logger.debug(u"{}: Updated address for remote sensor {}".format(self.dev.name, code))
+        except: 
+            pass              
+        ###################
+
         
         update_list = []
         
@@ -284,25 +298,15 @@ class RemoteSensor:
         
         self.logger.threaddebug(u"{}: RemoteSensor __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
-        remote_list = dev.pluginProps.get('remotes', None)
-        if remote_list and len(remote_list) > 0:
-            self.logger.debug(u"{}: adding {} remotes".format(dev.name, len(remote_list)))
-            self.remotes = {}
-            for code, rem_id in remote_list.items():
-                self.remotes[code] = indigo.devices[int(rem_id)]
-        else:
-            self.remotes = None
-            self.logger.debug(u"{}: no remotes".format(dev.name))
-
-        self.logger.threaddebug(u"{}: RemoteSensor __init__ done, pluginProps =\n{}".format(dev.name, dev.pluginProps))
         return
 
 
     def update(self):
+
+        self.logger.debug(u"{}: Updating device".format(self.dev.name))
         
         # has the Ecobee account been initialized yet?
         if not self.ecobee:
-            self.logger.debug(u"{}: update() needs to configure ecobee device".format(self.dev.name))
 
             if len(indigo.activePlugin.ecobee_accounts) == 0:
                 self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
@@ -311,7 +315,7 @@ class RemoteSensor:
             try:
                 accountID = int(self.dev.pluginProps["account"])
                 self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-                self.logger.debug(u"{}: Ecobee device assigned, {}".format(self.dev.name, accountID))
+                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.dev.name, accountID))
             except:
                 self.logger.error(u"updatable: Error obtaining ecobee account object")
                 return
@@ -319,24 +323,25 @@ class RemoteSensor:
             if not self.ecobee.authenticated:
                 self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
                 return
-         
-        remote_sensor = self.ecobee.sensors[self.address]
-        if not thermostat:
-            self.logger.debug("update: no thermostat data found for address {}".format(self.address))
+        
+        try: 
+            remote_sensor = self.ecobee.sensors[self.address]
+        except:
+            self.logger.debug("update: no remote sensor data found for address {}".format(self.address))
             return
                 
-        occupied = thermostat.get('remotes').get(code).get('occupancy')
-        remote.updateStateOnServer(key="onOffState", value = occupied)
+        occupied = remote_sensor.get('occupancy')
+        self.dev.updateStateOnServer(key="onOffState", value = occupied)
         if occupied == u'true':
-            remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
+            self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
         else:
-            remote.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
+            self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
        
-        temp = thermostat.get('remotes').get(code).get('temperature')
+        temp = remote_sensor.get('temperature')
         
         # check for non-digit values returned when remote is not responding
         if temp.isdigit():
-            remote.updateStateOnServer( key     = "sensorValue", 
+            self.dev.updateStateOnServer( key     = "sensorValue", 
                                         value   = EcobeeThermostat.temperatureFormatter.convert(temp), 
                                         uiValue = EcobeeThermostat.temperatureFormatter.format(temp),
                                         decimalPlaces = 1)
