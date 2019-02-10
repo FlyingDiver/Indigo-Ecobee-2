@@ -1,10 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import time
-import logging
 import json
+import logging
 import platform
+import threading
+import time
 
 from ecobee_account import EcobeeAccount
 from ecobee_devices import EcobeeThermostat, RemoteSensor
@@ -353,48 +354,30 @@ class Plugin(indigo.PluginBase):
             
                 sensor_name = dev.name + " Occupancy"
                 self.logger.info(u"Adding Occupancy Sensor '{}' to '{}'".format(sensor_name, dev.name))
-                newdev = indigo.device.create(indigo.kProtocol.Plugin, address = dev.address, name = sensor_name,
-                            deviceTypeId = "OccupancySensor", groupWithDevice = dev.id, folder = dev.folderId, 
-                            props = { 'SupportsStatusRequest': False, 'account': valuesDict["account"] })   
+                newdev = indigo.device.create(indigo.kProtocol.Plugin, address = dev.address, name = sensor_name, folder = dev.folderId,
+                            deviceTypeId = "OccupancySensor", props = { 'SupportsStatusRequest': False, 'account': valuesDict["account"] })   
                 newdev.model = dev.model
                 newdev.subModel = "Occupancy"
                 newdev.replaceOnServer()    
 
                 newProps["occupancy"] = newdev.id
+
+            dev.replacePluginPropsOnServer(newProps)
             
             if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart']:        # Supports linked remote sensors
             
                 remotes = thermostat.get("remotes")
                 self.logger.debug(u"{}: {} remotes".format(dev.name, len(remotes)))
                 
-                if valuesDict["createRemotes"] == False:
+                # Hack to create remote sensors after closedDeviceFactoryUi has completed.  If created here, they would automatically
+                # become part of the device group, which we don't want.
+                if valuesDict["createRemotes"]:
+                    delayedCreate = threading.Timer(0.5, lambda: self.createRemoteSensors(dev, remotes))
+                    delayedCreate.start()
+               
+                else:
                     self.logger.debug(u"{}: Not creating remotes".format(dev.name))
                 
-                else:       # create Indigo devices for all the linked remotes
-                
-                    remote_ids = indigo.Dict()
-        
-                    for code, rem in remotes.items():
-
-                        for rdev in indigo.devices.iter("self"):
-                            if rdev.deviceTypeId == 'RemoteSensor' and rdev.address == code:    # remote device already exists
-                                self.logger.debug(u"Remote sensor device {} already exists".format(rdev.address))
-                        else:
-        
-                            remote_name = "{} Remote - {}".format(dev.name, rem["name"])
-                            self.logger.info(u"Adding Remote Sensor '{}' to '{}'".format(remote_name, dev.name))
-                            newdev = indigo.device.create(indigo.kProtocol.Plugin, address = code, name = remote_name,
-                                        deviceTypeId="RemoteSensor", folder=dev.folderId, 
-                                        props={ 'SupportsSensorValue': True, 'SupportsStatusRequest': False, 'account': valuesDict["account"] })
-                            newdev.model = dev.model
-                            newdev.subModel = "Remote"
-                            newdev.replaceOnServer()
-                            newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
-                            remote_ids[code] = str(newdev.id)
-            
-                        newProps["remotes"] = remote_ids
-           
-            dev.replacePluginPropsOnServer(newProps)
 
         elif valuesDict["deviceType"] == "RemoteSensor":
 
@@ -410,9 +393,34 @@ class Plugin(indigo.PluginBase):
             newdev.model = "Ecobee Remote Sensor"
             newdev.replaceOnServer()
 
-
-        self.logger.debug("closedDeviceFactoryUi complete, pluginProps =\n{}".format(newdev.pluginProps))
         return
+
+    def createRemoteSensors(self, dev, remotes):
+
+        self.logger.debug("{}: createRemoteSensors starting".format(dev.name))
+        remote_ids = indigo.Dict()
+
+        for code, rem in remotes.items():
+
+            for rdev in indigo.devices.iter("self"):
+                if rdev.deviceTypeId == 'RemoteSensor' and rdev.address == code:    # remote device already exists
+                    self.logger.debug(u"Remote sensor device {} already exists".format(rdev.address))
+            else:
+
+                remote_name = "{} Remote - {}".format(dev.name, rem["name"])
+                self.logger.info(u"Adding Remote Sensor '{}' to '{}'".format(remote_name, dev.name))
+                newdev = indigo.device.create(indigo.kProtocol.Plugin, address = code, name = remote_name, folder=dev.folderId,
+                            deviceTypeId="RemoteSensor", props={ 'SupportsSensorValue': True, 'SupportsStatusRequest': False, 'account': dev.pluginProps["account"] })
+                newdev.model = dev.model
+                newdev.subModel = "Remote"
+                newdev.replaceOnServer()
+                newdev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
+                remote_ids[code] = str(newdev.id)
+
+        newProps = dev.pluginProps
+        newProps["remotes"] = remote_ids
+        dev.replacePluginPropsOnServer(newProps)
+          
 
     ######################
     #

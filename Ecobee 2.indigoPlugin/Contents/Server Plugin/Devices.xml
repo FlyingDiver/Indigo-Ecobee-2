@@ -137,7 +137,7 @@
             </Field>
             <Field id="address" type="menu">
                 <Label>Thermostat:</Label>
-                <List class="self" method="get_thermostat_list" dynamicReload="true"/>
+                <List class="self" method="get_device_list" dynamicReload="true"/>
                 <CallbackMethod>menuChanged</CallbackMethod>
             </Field>
         ￼   <Field type="menu" id="holdType" defaultValue="nextTransition">
