@@ -271,7 +271,7 @@ class Plugin(indigo.PluginBase):
         return (valuesDict, errorMsgDict)
 
     def validateDeviceFactoryUi(self, valuesDict, devIdList):
-        self.logger.debug("validateDeviceFactoryUi: valuesDict = {}, devIdList = {}".format(valuesDict, devIdList))
+        self.logger.threaddebug("validateDeviceFactoryUi: valuesDict = {}, devIdList = {}".format(valuesDict, devIdList))
         errorsDict = indigo.Dict()
         valid = True
         
@@ -311,7 +311,7 @@ class Plugin(indigo.PluginBase):
             self.logger.debug("closedDeviceFactoryUi: user cancelled")
             return
 
-        self.logger.debug("closedDeviceFactoryUi: valuesDict =\n{}\ndevIdList =\n{}".format(valuesDict, devIdList))
+        self.logger.threaddebug("closedDeviceFactoryUi: valuesDict =\n{}\ndevIdList =\n{}".format(valuesDict, devIdList))
             
         if valuesDict["deviceType"] == "EcobeeAccount":
         
@@ -359,10 +359,8 @@ class Plugin(indigo.PluginBase):
                 newdev.model = dev.model
                 newdev.subModel = "Occupancy"
                 newdev.replaceOnServer()    
-
                 newProps["occupancy"] = newdev.id
-
-            dev.replacePluginPropsOnServer(newProps)
+                self.logger.info(u"Created EcobeeThermostat Occupancy device '{}'".format(newdev.name))
             
             if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart']:        # Supports linked remote sensors
             
@@ -371,13 +369,14 @@ class Plugin(indigo.PluginBase):
                 
                 # Hack to create remote sensors after closedDeviceFactoryUi has completed.  If created here, they would automatically
                 # become part of the device group, which we don't want.
-                if valuesDict["createRemotes"]:
+                if valuesDict["createRemotes"] and len(remotes) > 0:
                     delayedCreate = threading.Timer(0.5, lambda: self.createRemoteSensors(dev, remotes))
                     delayedCreate.start()
                
                 else:
                     self.logger.debug(u"{}: Not creating remotes".format(dev.name))
-                
+                           
+            dev.replacePluginPropsOnServer(newProps)
 
         elif valuesDict["deviceType"] == "RemoteSensor":
 
@@ -392,6 +391,8 @@ class Plugin(indigo.PluginBase):
                         props = { 'SupportsStatusRequest': False, 'SupportsSensorValue': True, 'SupportsSensorValue': True, 'account': valuesDict["account"]})
             newdev.model = "Ecobee Remote Sensor"
             newdev.replaceOnServer()
+
+            self.logger.info(u"Created RemoteSensor device '{}'".format(newdev.name))
 
         return
 

@@ -106,7 +106,7 @@ class EcobeeAccount:
         try:
             error = request.json()['error']
             if error == 'invalid_grant':
-                self.logger.error(u"{}: Authentication lost, please re-authenticate.'".format(self.dev.name))
+                self.logger.error(u"{}: Authentication lost, please re-authenticate".format(self.dev.name))
                 self.authenticated = False   
             else:                           
                 self.logger.error("Token Refresh Error, error = {}".format(error))
