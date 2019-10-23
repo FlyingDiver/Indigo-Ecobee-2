@@ -545,6 +545,8 @@ class Plugin(indigo.PluginBase):
             if ecobeeAccount.authenticated:
                 self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(dev.id)] = ecobeeAccount.refresh_token
                 self.savePluginPrefs()
+
+            self.update_needed = True
                             
         elif dev.deviceTypeId == 'EcobeeThermostat':
 
