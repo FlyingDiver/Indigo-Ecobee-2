@@ -24,7 +24,8 @@ ECOBEE_MODELS = {
     'athenaSmart' :    'ecobee3 Smart',
     'corSmart'    :    'Carrier or Bryant Cor',
     'nikeSmart'   :    'ecobee3 lite Smart',
-    'apolloSmart' :    'ecobee4 Smart'
+    'apolloSmart' :    'ecobee4 Smart',
+    'vulcanSmart' :    'ecobee Smart w/ Voice Control'
 }
 
 TEMP_FORMATTERS = {
@@ -333,7 +334,7 @@ class Plugin(indigo.PluginBase):
 
             dev = indigo.device.create(indigo.kProtocol.Plugin, address = address, name = name, deviceTypeId="EcobeeThermostat")
             dev.model = "Ecobee Thermostat"
-            dev.subModel = ECOBEE_MODELS[device_type]
+            dev.subModel = ECOBEE_MODELS.get(device_type, 'Unknown')
             dev.replaceOnServer()
 
             self.logger.info(u"Created EcobeeThermostat device '{}'".format(dev.name))
@@ -347,10 +348,10 @@ class Plugin(indigo.PluginBase):
 
             # set props based on device type
         
-            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart']: 
+            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart']: 
                 newProps["NumTemperatureInputs"] = 2
 
-            if device_type in ['athenaSmart', 'apolloSmart', 'corSmart']:    # Has integral occupancy sensor.
+            if device_type in ['athenaSmart', 'apolloSmart', 'corSmart', 'vulcanSmart']:    # Has integral occupancy sensor.
             
                 sensor_name = dev.name + " Occupancy"
                 self.logger.info(u"Adding Occupancy Sensor '{}' to '{}'".format(sensor_name, dev.name))
@@ -362,7 +363,7 @@ class Plugin(indigo.PluginBase):
                 newProps["occupancy"] = newdev.id
                 self.logger.info(u"Created EcobeeThermostat Occupancy device '{}'".format(newdev.name))
             
-            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart']:        # Supports linked remote sensors
+            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart']:        # Supports linked remote sensors
             
                 remotes = thermostat.get("remotes")
                 self.logger.debug(u"{}: {} remotes".format(dev.name, len(remotes)))
@@ -432,7 +433,7 @@ class Plugin(indigo.PluginBase):
         stateList = indigo.PluginBase.getDeviceStateList(self, dev)
         device_type = dev.pluginProps.get("device_type", None)
                                 
-        if device_type in ['athenaSmart', 'corSmart', 'apolloSmart']:
+        if device_type in ['athenaSmart', 'corSmart', 'apolloSmart', 'vulcanSmart']:
 
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 

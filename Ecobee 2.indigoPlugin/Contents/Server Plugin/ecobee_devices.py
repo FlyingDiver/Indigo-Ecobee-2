@@ -150,7 +150,7 @@ class EcobeeThermostat:
         val = bool(status and ('fan' in status or 'ventilator' in status))
         update_list.append({'key' : "hvacFanIsOn", 'value' : val})
         
-        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart']:
+        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart', 'vulcanSmart']:
         
             temp2 = thermostat_data.get('internal').get('temperature')
             update_list.append({'key'           : "temperatureInput2", 
