@@ -10,11 +10,12 @@ import logging
 # All interactions with the Ecobee servers are encapsulated in this class
 #
 
+API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"
+
 class EcobeeAccount:
 
-    def __init__(self, dev, api_key, refresh_token = None):
+    def __init__(self, dev, refresh_token = None):
         self.logger = logging.getLogger("Plugin.EcobeeAccount")
-        self.api_key = api_key
         self.authenticated = False
         self.next_refresh = time.time()
         self.thermostats = {}
@@ -37,7 +38,7 @@ class EcobeeAccount:
     # Authentication Step 1
     def request_pin(self):
         
-        params = {'response_type': 'ecobeePin', 'client_id': self.api_key, 'scope': 'smartWrite'}
+        params = {'response_type': 'ecobeePin', 'client_id': API_KEY, 'scope': 'smartWrite'}
         try:
             request = requests.get('https://api.ecobee.com/authorize', params=params)
         except requests.RequestException, e:
@@ -57,7 +58,7 @@ class EcobeeAccount:
     # Authentication Step 3
     def get_tokens(self):
     
-        params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': self.api_key}
+        params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': API_KEY}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:
@@ -86,7 +87,7 @@ class EcobeeAccount:
             
         self.logger.debug("Token Request with refresh_token = {}".format(self.refresh_token))
 
-        params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': self.api_key}
+        params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': API_KEY}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:

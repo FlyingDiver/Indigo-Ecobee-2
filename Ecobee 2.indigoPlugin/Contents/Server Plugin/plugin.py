@@ -15,8 +15,6 @@ import temperature_scale
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken-'
 TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 
-API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"
-
 ECOBEE_MODELS = {
     'Unknown'     :    'Unknown Device',
     'idtSmart'    :    'ecobee Smart',
@@ -82,7 +80,7 @@ class Plugin(indigo.PluginBase):
             self.logger.error(u"Unsupported macOS version! {}".format(macOS))
                 
         self.updateFrequency = float(self.pluginPrefs.get('updateFrequency', "15")) *  60.0
-        self.logger.debug(u"updateFrequency = " + str(self.updateFrequency))
+        self.logger.debug(u"updateFrequency = {}".format(self.updateFrequency))
         self.next_update = time.time() + self.updateFrequency
         
         self.ecobee_accounts = {}
@@ -125,7 +123,7 @@ class Plugin(indigo.PluginBase):
             self.logger.debug(u"logLevel = " + str(self.logLevel))
 
             self.updateFrequency = float(valuesDict['updateFrequency']) * 60.0
-            self.logger.debug(u"updateFrequency = " + str(self.updateFrequency))
+            self.logger.debug(u"updateFrequency = {}".format(self.updateFrequency))
             self.next_update = time.time()
 
             scaleInfo = valuesDict[TEMPERATURE_SCALE_PLUGIN_PREF]
@@ -539,7 +537,7 @@ class Plugin(indigo.PluginBase):
 
         if dev.deviceTypeId == 'EcobeeAccount':     # create the Ecobee account object.  It will attempt to refresh the auth token.
             
-            ecobeeAccount = EcobeeAccount(dev, API_KEY, refresh_token = self.pluginPrefs.get(REFRESH_TOKEN_PLUGIN_PREF + str(dev.id), None))
+            ecobeeAccount = EcobeeAccount(dev, refresh_token = self.pluginPrefs.get(REFRESH_TOKEN_PLUGIN_PREF + str(dev.id), None))
             self.ecobee_accounts[dev.id] = ecobeeAccount
             
             dev.updateStateOnServer(key="authenticated", value=ecobeeAccount.authenticated)
@@ -593,7 +591,7 @@ class Plugin(indigo.PluginBase):
 #    Authentication Step 1, called from Devices.xml
 
     def request_pin(self, valuesDict, typeId, devId):
-        self.temp_ecobeeAccount = EcobeeAccount(None, API_KEY, None)
+        self.temp_ecobeeAccount = EcobeeAccount(None, None)
         pin = self.temp_ecobeeAccount.request_pin()
         if pin:
             valuesDict["pin"] = pin

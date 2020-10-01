@@ -69,17 +69,22 @@ class EcobeeThermostat:
                 self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
                 self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.dev.name, accountID))
             except:
-                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                self.logger.error(u"update: Error obtaining ecobee account object")
                 return
             
             if not self.ecobee.authenticated:
                 self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
                 return
 
-        thermostat_data = self.ecobee.thermostats[self.address]
-        if not thermostat_data:
-            self.logger.debug("update: no thermostat data found for address {}".format(self.address))
-            return
+		try:
+        	thermostat_data = self.ecobee.thermostats[self.address]
+        except:
+                self.logger.debug(u"update: error in thermostat data for address {}".format(self.address))   
+                return     
+        else:
+			if not thermostat_data:
+				self.logger.debug("update: no thermostat data found for address {}".format(self.address))
+				return
         
         ### fixup code ###
         try:
