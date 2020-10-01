@@ -76,15 +76,15 @@ class EcobeeThermostat:
                 self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
                 return
 
-		try:
-        	thermostat_data = self.ecobee.thermostats[self.address]
+        try:
+            thermostat_data = self.ecobee.thermostats[self.address]
         except:
-                self.logger.debug(u"update: error in thermostat data for address {}".format(self.address))   
-                return     
+            self.logger.debug(u"update: error in thermostat data for address {}".format(self.address))   
+            return     
         else:
-			if not thermostat_data:
-				self.logger.debug("update: no thermostat data found for address {}".format(self.address))
-				return
+            if not thermostat_data:
+                self.logger.debug("update: no thermostat data found for address {}".format(self.address))
+                return
         
         ### fixup code ###
         try:
