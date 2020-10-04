@@ -24,7 +24,7 @@ How to use:
 
 1. Install the plugin
 2. Create an Ecobee Account device
-3. Obtain 4 character PIN from config dialog
+3. Obtain the authentication PIN from config dialog
 4. Log onto your Ecobee account, add app access using PIN
 5. Finish authentication in device config dialog
 6. Create thermostat devices
