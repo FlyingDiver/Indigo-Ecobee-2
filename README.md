@@ -3,14 +3,10 @@
 [![N|Solid](http://forums.indigodomo.com/static/www/images/wordmark.png)](http://indigodomo.com)
 
 The plugin enables monitoring and control of Ecobee thermostats and remote sensors.
-
-Supported Thermostats:
-
-	
 	
 Requirements:
 
-* A current username/password for your Ecobee account
+* The username/password for your Ecobee account
 * A supported Ecobee thermostat:
 	* Ecobee 4
 	* Ecobee 3 lite

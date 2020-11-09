@@ -104,8 +104,8 @@ class Plugin(indigo.PluginBase):
         errorDict = indigo.Dict()
 
         updateFrequency = int(valuesDict['updateFrequency'])
-        if (updateFrequency < 5) or (updateFrequency > 60):
-            errorDict['updateFrequency'] = u"Update frequency is invalid - enter a valid number (between 5 and 60)"
+        if (updateFrequency < 3) or (updateFrequency > 60):
+            errorDict['updateFrequency'] = u"Update frequency is invalid - enter a valid number (between 3 and 60)"
 
         if len(errorDict) > 0:
             return (False, valuesDict, errorDict)
@@ -215,12 +215,6 @@ class Plugin(indigo.PluginBase):
                 if iden not in active_stats:
                     available_devices.append((iden, therm["name"]))
         
-            if targetId:
-                try:
-                    dev = indigo.devices[targetId]
-                    available_devices.insert(0, (dev.pluginProps["address"], dev.name))
-                except:
-                    pass
                 
         elif valuesDict["deviceType"] == "RemoteSensor":
 
@@ -234,17 +228,17 @@ class Plugin(indigo.PluginBase):
             for iden, sensor in ecobee.sensors.items():
                 if iden not in active_sensors:
                     available_devices.append((iden, sensor["name"]))
-        
-            if targetId:
-                try:
-                    dev = indigo.devices[targetId]
-                    available_devices.insert(0, (dev.pluginProps["address"], dev.name))
-                except:
-                    pass
-        
+                
         else:
             self.logger.warning("get_device_list: unknown deviceType = {}".format(valuesDict["deviceType"]))
           
+        if targetId:
+            try:
+                dev = indigo.devices[targetId]
+                available_devices.insert(0, (dev.pluginProps["address"], dev.name))
+            except:
+                pass
+
         self.logger.debug("get_device_list: available_devices for {} = {}".format(valuesDict["deviceType"], available_devices))
         return available_devices     
 
