@@ -111,7 +111,6 @@ class EcobeeAccount:
                 self.authenticated = False   
             else:                           
                 self.logger.error("Token Refresh Error, error = {}".format(error))
-                self.next_refresh = time.time() + 300.0         # try again in five minutes
         except:
             pass
 

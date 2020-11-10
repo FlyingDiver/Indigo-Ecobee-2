@@ -164,14 +164,12 @@ class Plugin(indigo.PluginBase):
                 
                 for accountID, account in self.ecobee_accounts.items():
                     if time.time() > account.next_refresh:
+                        account.do_token_refresh()                    
                         if account.authenticated:
-                            account.do_token_refresh()                    
                             self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF + str(accountID)] = account.refresh_token
                             self.savePluginPrefs()
-                        else:
-                            self.logger.error("Ecobee account {} not authenticated, skipping refresh".format(accountID))
 
-                self.sleep(2.0)
+                self.sleep(60.0)
 
         except self.StopThread:
             self.logger.debug(u"runConcurrentThread ending")
