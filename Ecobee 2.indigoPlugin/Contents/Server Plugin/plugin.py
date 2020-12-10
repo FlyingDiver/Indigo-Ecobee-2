@@ -208,7 +208,7 @@ class Plugin(indigo.PluginBase):
             ]
             self.logger.debug("get_device_list: active_stats = {}".format(active_stats))
 
-            available_devices =[]
+            available_devices = []
             for iden, therm in ecobee.thermostats.items():
                 if iden not in active_stats:
                     available_devices.append((iden, therm["name"]))
@@ -222,13 +222,17 @@ class Plugin(indigo.PluginBase):
             ]
             self.logger.debug("get_device_list: active_sensors = {}".format(active_sensors))
             
-            available_devices =[]
+            available_devices = []
             for iden, sensor in ecobee.sensors.items():
                 if iden not in active_sensors:
                     available_devices.append((iden, sensor["name"]))
                 
+        elif valuesDict["deviceType"] == "EcobeeAccount":
+            return []
+            
         else:
             self.logger.warning("get_device_list: unknown deviceType = {}".format(valuesDict["deviceType"]))
+            return []
           
         if targetId:
             try:
@@ -583,7 +587,12 @@ class Plugin(indigo.PluginBase):
 #    Authentication Step 1, called from Devices.xml
 
     def request_pin(self, valuesDict, typeId, devId):
-        self.temp_ecobeeAccount = EcobeeAccount(None, None)
+        if devId in self.ecobee_accounts:
+            self.temp_ecobeeAccount = self.ecobee_accounts[devId]
+            self.logger.debug(u"request_pin: using existing Ecobee account {}".format(self.temp_ecobeeAccount.dev.name))
+        else:
+            self.temp_ecobeeAccount = EcobeeAccount(None, None)
+            self.logger.debug(u"request_pin: using temporary Ecobee account object")
         pin = self.temp_ecobeeAccount.request_pin()
         if pin:
             valuesDict["pin"] = pin
