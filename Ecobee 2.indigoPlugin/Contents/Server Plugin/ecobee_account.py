@@ -96,11 +96,17 @@ class EcobeeAccount:
             return
             
         if request.status_code == requests.codes.ok:
+            self.logger.debug("Token Refresh OK, new access_token = {}, new refresh_token = {}, expires_in = {}".format(request.json()['access_token'], request.json()['refresh_token'], request.json()['expires_in']))
+            if request.json()['refresh_token'] == self.refresh_token:
+                self.logger.debug("Refresh Token did not change")
+            try:
+               if request.json()['access_token'] == self.access_token:
+                    self.logger.debug("Access Token did not change")
+            except:
+                pass
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            expires_in = request.json()['expires_in']
-            self.logger.debug("Token Refresh OK, new access_token = {}, new refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
-            self.next_refresh = time.time() + (float(expires_in) * 0.80)
+            self.next_refresh = time.time() + (float(request.json()['expires_in']) * 0.80)
             self.authenticated = True
             return
             
