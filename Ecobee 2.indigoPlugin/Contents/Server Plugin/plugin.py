@@ -146,7 +146,7 @@ class Plugin(indigo.PluginBase):
                     for accountID, account in self.ecobee_accounts.items():
                         if account.authenticated:
                             account.server_update()
-                            account.dev.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
+                            indigo.devices[accountID].updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
                         else:
                             account.dev.updateStateImageOnServer(indigo.kStateImageSel.SensorTripped)
                             self.logger.debug("Ecobee account {} not authenticated, skipping update".format(accountID))

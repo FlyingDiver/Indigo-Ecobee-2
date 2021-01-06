@@ -6,6 +6,8 @@ import json
 import time
 import logging
 
+import indigo
+
 #
 # All interactions with the Ecobee servers are encapsulated in this class
 #
@@ -87,7 +89,7 @@ class EcobeeAccount:
             self.authenticated = False
             return
    
-        devName = indig.devices[self.devID].name     
+        devName = indigo.devices[self.devID].name     
         self.logger.debug(u"{}: Token Refresh, old refresh_token = {}".format(devName, self.refresh_token))
 
         params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': API_KEY, 'ecobee_type': 'jwt'}
@@ -136,7 +138,7 @@ class EcobeeAccount:
 
     def server_update(self):
     
-        devName = indig.devices[self.devID].name
+        devName = indigo.devices[self.devID].name
     
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
