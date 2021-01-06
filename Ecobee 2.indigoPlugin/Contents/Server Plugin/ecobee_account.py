@@ -20,17 +20,19 @@ class EcobeeAccount:
         self.next_refresh = time.time()
         self.thermostats = {}
         self.sensors = {}
-
+        self.access_token = None
+        self.refresh_token = None
+    
         if not dev:             # temp account objects created during PIN authentication don't have an associated device 
             return
                     
-        self.dev = dev
+        self.devID = dev.id
 
         if refresh_token:
-            self.logger.debug(u"{}: EcobeeAccount __init__, using refresh token = {}".format(dev.name, refresh_token))
+            self.logger.info(u"{}: EcobeeAccount created using refresh token = {}".format(dev.name, refresh_token))
             self.refresh_token = refresh_token
             self.do_token_refresh()
-                    
+           
 #
 #   Ecobee Authentication functions
 #
@@ -48,7 +50,7 @@ class EcobeeAccount:
         if request.status_code == requests.codes.ok:
             self.authorization_code = request.json()['code']
             pin = request.json()['ecobeePin']
-            self.logger.debug("PIN Request OK, pin = {}. authorization_code = {}".format(pin, self.authorization_code))
+            self.logger.info("PIN Request OK, pin = {}. authorization_code = {}".format(pin, self.authorization_code))
             return pin
             
         else:
@@ -58,7 +60,7 @@ class EcobeeAccount:
     # Authentication Step 3
     def get_tokens(self):
     
-        params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': API_KEY}
+        params = {'grant_type': 'ecobeePin', 'code': self.authorization_code, 'client_id': API_KEY, 'ecobee_type': 'jwt'}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:
@@ -70,7 +72,7 @@ class EcobeeAccount:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             expires_in = request.json()['expires_in']
-            self.logger.debug("Token Request OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
+            self.logger.info("Token Request OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
             self.next_refresh = time.time() + (float(expires_in) * 0.80)
             self.authenticated = True
         else:
@@ -84,10 +86,11 @@ class EcobeeAccount:
         if not self.refresh_token:
             self.authenticated = False
             return
-            
-        self.logger.debug("Token Request with refresh_token = {}".format(self.refresh_token))
+   
+        devName = indig.devices[self.devID].name     
+        self.logger.debug(u"{}: Token Refresh, old refresh_token = {}".format(devName, self.refresh_token))
 
-        params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': API_KEY}
+        params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': API_KEY, 'ecobee_type': 'jwt'}
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:
@@ -96,16 +99,18 @@ class EcobeeAccount:
             return
             
         if request.status_code == requests.codes.ok:
-            self.logger.debug("Token Refresh OK, new access_token = {}, new refresh_token = {}, expires_in = {}".format(request.json()['access_token'], request.json()['refresh_token'], request.json()['expires_in']))
-            if request.json()['refresh_token'] == self.refresh_token:
-                self.logger.debug("Refresh Token did not change")
-            try:
-               if request.json()['access_token'] == self.access_token:
-                    self.logger.debug("Access Token did not change")
-            except:
-                pass
-            self.access_token = request.json()['access_token']
-            self.refresh_token = request.json()['refresh_token']
+            if self.access_token and request.json()['access_token'] == self.access_token:
+                self.logger.debug(u"{}: Access Token did not change".format(devName))
+            else:
+                self.access_token = request.json()['access_token']
+                self.logger.debug(u"{}: Token Refresh OK, new access_token = {}".format(devName, self.access_token))
+            
+            if self.refresh_token and request.json()['refresh_token'] == self.refresh_token:
+                self.logger.debug(u"{}: Refresh Token did not change".format(devName))
+            else:
+                self.refresh_token = request.json()['refresh_token']
+                self.logger.info(u"{}: Token Refresh OK, new refresh_token: {}".format(devName, self.refresh_token))
+
             self.next_refresh = time.time() + (float(request.json()['expires_in']) * 0.80)
             self.authenticated = True
             return
@@ -113,10 +118,10 @@ class EcobeeAccount:
         try:
             error = request.json()['error']
             if error == 'invalid_grant':
-                self.logger.error(u"{}: Authentication lost, please re-authenticate".format(self.dev.name))
+                self.logger.error(u"{}: Token refresh failed, will retry in 5 minutes.".format(devName))
                 self.authenticated = False   
             else:                           
-                self.logger.error("Token Refresh Error, error = {}".format(error))
+                self.logger.error(u"{}: Token Refresh Error, error = {}".format(devName, error))
         except:
             pass
 
@@ -131,6 +136,8 @@ class EcobeeAccount:
 
     def server_update(self):
     
+        devName = indig.devices[self.devID].name
+    
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'json': ('{"selection":{"selectionType":"registered",'
@@ -143,19 +150,19 @@ class EcobeeAccount:
         try:
             request = requests.get('https://api.ecobee.com/1/thermostat', headers=header, params=params)
         except requests.RequestException, e:
-            self.logger.error(u"{}: Ecobee Account Update Error, exception = {}".format(self.dev.name, e))
+            self.logger.error(u"{}: Ecobee Account Update Error, exception = {}".format(devName, e))
             return
             
         if request.status_code != requests.codes.ok:
-            self.logger.error(u"{}: Ecobee Account Update failed, response = '{}'".format(self.dev.name, request.text))                
+            self.logger.error(u"{}: Ecobee Account Update failed, response = '{}'".format(devName, request.text))                
             return
             
         stat_data = request.json()['thermostatList']
         status = request.json()['status']
         if status["code"] == 0:
-            self.logger.debug(u"{}: Ecobee Account Update OK, got info on {} thermostats".format(self.dev.name, len(stat_data)))
+            self.logger.debug(u"{}: Ecobee Account Update OK, got info on {} thermostats".format(devName, len(stat_data)))
         else:
-            self.logger.warning(u"{}: Ecobee Account Update Error, code  = {}, message = {}.".format(self.dev.name, status["code"], status["message"]))
+            self.logger.warning(u"{}: Ecobee Account Update Error, code  = {}, message = {}.".format(devName, status["code"], status["message"]))
             return
 
         self.logger.threaddebug(json.dumps(stat_data, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -163,7 +170,7 @@ class EcobeeAccount:
         # Extract the relevant info from the server data and put it in a convenient Dict form
         
         for therm in stat_data:
-            self.logger.debug(u"{}: getting data for '{}', {}".format(self.dev.name, therm[u"name"], therm[u"identifier"]))
+            self.logger.debug(u"{}: getting data for '{}', {}".format(devName, therm[u"name"], therm[u"identifier"]))
             
             identifier = therm["identifier"]
             self.thermostats[identifier] = {    
@@ -196,7 +203,7 @@ class EcobeeAccount:
             for remote in therm[u"remoteSensors"]:
 
                 if remote["type"] == "ecobee3_remote_sensor":
-                    self.logger.debug(u"{}: getting data for remote sensor '{}', {}".format(self.dev.name, remote[u"name"], remote[u"code"]))
+                    self.logger.debug(u"{}: getting data for remote sensor '{}', {}".format(devName, remote[u"name"], remote[u"code"]))
                     code = remote[u"code"]
                     remote_data = {u"name" : remote[u"name"], u"thermostat" : identifier}
                     for cap in remote["capability"]:
