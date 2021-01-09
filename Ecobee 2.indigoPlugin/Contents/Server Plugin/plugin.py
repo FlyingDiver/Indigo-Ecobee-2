@@ -148,7 +148,7 @@ class Plugin(indigo.PluginBase):
                             account.server_update()
                             indigo.devices[accountID].updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
                         else:
-                            account.dev.updateStateImageOnServer(indigo.kStateImageSel.SensorTripped)
+                            indigo.devices[accountID].updateStateImageOnServer(indigo.kStateImageSel.SensorTripped)
                             self.logger.debug("Ecobee account {} not authenticated, skipping update".format(accountID))
 
                     # now update all the Indigo devices         
@@ -183,9 +183,9 @@ class Plugin(indigo.PluginBase):
     ########################################
 
     def get_account_list(self, filter="", valuesDict=None, typeId="", targetId=0):
-        self.logger.threaddebug("get_account_list: typeId = {}, targetId = {}, valuesDict = {}".format(typeId, targetId, valuesDict))
+        self.logger.threaddebug("get_account_list: typeId = {}, targetId = {}, filter = {}, valuesDict = {}".format(typeId, targetId, filter, valuesDict))
         accounts = [
-            (account.dev.id, indigo.devices[account.dev.id].name)
+            (account.devID, indigo.devices[account.devID].name)
             for account in self.ecobee_accounts.values()
         ]
         self.logger.debug("get_account_list: accounts = {}".format(accounts))
@@ -200,7 +200,7 @@ class Plugin(indigo.PluginBase):
         except:
             return []
         
-        if valuesDict["deviceType"] == "EcobeeThermostat":
+        if typeId == "EcobeeThermostat":
         
             active_stats =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -214,7 +214,7 @@ class Plugin(indigo.PluginBase):
                     available_devices.append((iden, therm["name"]))
         
                 
-        elif valuesDict["deviceType"] == "RemoteSensor":
+        elif typeId == "RemoteSensor":
 
             active_sensors =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -227,7 +227,7 @@ class Plugin(indigo.PluginBase):
                 if iden not in active_sensors:
                     available_devices.append((iden, sensor["name"]))
                 
-        elif valuesDict["deviceType"] == "EcobeeAccount":
+        elif typeId == "EcobeeAccount":
             return []
             
         else:
@@ -241,7 +241,7 @@ class Plugin(indigo.PluginBase):
             except:
                 pass
 
-        self.logger.debug("get_device_list: available_devices for {} = {}".format(valuesDict["deviceType"], available_devices))
+        self.logger.debug("get_device_list: available_devices for {} = {}".format(typeId, available_devices))
         return available_devices     
 
     # doesn't do anything, just needed to force other menus to dynamically refresh
@@ -261,7 +261,7 @@ class Plugin(indigo.PluginBase):
         
         if len(self.ecobee_accounts) > 0:
             valuesDict["deviceType"] = "EcobeeThermostat"
-            valuesDict["account"] = self.ecobee_accounts[self.ecobee_accounts.keys()[0]].dev.id
+            valuesDict["account"] = self.ecobee_accounts[self.ecobee_accounts.keys()[0]].devID
             
         return (valuesDict, errorMsgDict)
 
@@ -589,7 +589,7 @@ class Plugin(indigo.PluginBase):
     def request_pin(self, valuesDict, typeId, devId):
         if devId in self.ecobee_accounts:
             self.temp_ecobeeAccount = self.ecobee_accounts[devId]
-            self.logger.debug(u"request_pin: using existing Ecobee account {}".format(self.temp_ecobeeAccount.dev.name))
+            self.logger.debug(u"request_pin: using existing Ecobee account {}".format(self.temp_ecobeeAccount.devID))
         else:
             self.temp_ecobeeAccount = EcobeeAccount(None, None)
             self.logger.debug(u"request_pin: using temporary Ecobee account object")

@@ -165,6 +165,16 @@
             <Field id="SupportsOnState" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="SupportsSensorValue" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="SupportsStatusRequest" type="checkbox" defaultValue="false" hidden="true" />
+            <Field id="account" type="menu">
+                <Label>Ecobee Account:</Label>
+                <List class="self" method="get_account_list" dynamicReload="true"/>
+                <CallbackMethod>menuChanged</CallbackMethod>
+            </Field>
+            <Field id="address" type="menu">
+                <Label>Sensor:</Label>
+                <List class="self" method="get_device_list" dynamicReload="true"/>
+                <CallbackMethod>menuChanged</CallbackMethod>
+            </Field>
         </ConfigUI>
     </Device>
 </Devices>
