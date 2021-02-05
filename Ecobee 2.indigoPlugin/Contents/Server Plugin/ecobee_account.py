@@ -96,7 +96,7 @@ class EcobeeAccount:
         try:
             request = requests.post('https://api.ecobee.com/token', params=params)
         except requests.RequestException, e:
-            self.logger.error("Token Refresh Error, exception = {}".format(e))
+            self.logger.warning("Token Refresh Error, exception = {}".format(e))
             self.next_refresh = time.time() + 300.0         # try again in five minutes
             return
             

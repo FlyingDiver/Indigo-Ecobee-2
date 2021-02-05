@@ -200,7 +200,7 @@ class Plugin(indigo.PluginBase):
         except:
             return []
         
-        if typeId == "EcobeeThermostat":
+        if valuesDict["deviceType"] == "EcobeeThermostat":
         
             active_stats =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -214,7 +214,7 @@ class Plugin(indigo.PluginBase):
                     available_devices.append((iden, therm["name"]))
         
                 
-        elif typeId == "RemoteSensor":
+        elif valuesDict["deviceType"] == "RemoteSensor":
 
             active_sensors =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -227,7 +227,7 @@ class Plugin(indigo.PluginBase):
                 if iden not in active_sensors:
                     available_devices.append((iden, sensor["name"]))
                 
-        elif typeId == "EcobeeAccount":
+        elif valuesDict["deviceType"] == "EcobeeAccount":
             return []
             
         else:
@@ -241,7 +241,7 @@ class Plugin(indigo.PluginBase):
             except:
                 pass
 
-        self.logger.debug("get_device_list: available_devices for {} = {}".format(typeId, available_devices))
+        self.logger.debug("get_device_list: available_devices for {} = {}".format(valuesDict["deviceType"], available_devices))
         return available_devices     
 
     # doesn't do anything, just needed to force other menus to dynamically refresh
