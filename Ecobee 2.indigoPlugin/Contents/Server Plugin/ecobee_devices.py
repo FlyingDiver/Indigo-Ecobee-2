@@ -104,6 +104,9 @@ class EcobeeThermostat:
         
         self.name = thermostat_data.get('name')
 
+        last_event = thermostat_data.get('latestEventType')
+        self.dev.updateStateOnServer(key="latestEventType", value=last_event)
+        
         device_type = thermostat_data.get('modelNumber')
         self.dev.updateStateOnServer(key="device_type", value=device_type)
         

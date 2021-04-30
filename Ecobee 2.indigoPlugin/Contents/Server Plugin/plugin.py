@@ -430,6 +430,11 @@ class Plugin(indigo.PluginBase):
         if device_type in ['athenaSmart', 'corSmart', 'apolloSmart', 'vulcanSmart']:
 
             stateList.append({  "Disabled"     : False, 
+                                "Key"          : "latestEventType", 
+                                "StateLabel"   : "Last Event",   
+                                "TriggerLabel" : "Last Event",   
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
                                 "StateLabel"   : "Model",   
                                 "TriggerLabel" : "Model",   
@@ -468,6 +473,11 @@ class Plugin(indigo.PluginBase):
         elif device_type in ['nikeSmart']:
 
             stateList.append({  "Disabled"     : False, 
+                                "Key"          : "latestEventType", 
+                                "StateLabel"   : "Last Event",   
+                                "TriggerLabel" : "Last Event",   
+                                "Type"         : 150 })
+            stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
                                 "StateLabel"   : "Model",   
                                 "TriggerLabel" : "Model",   
@@ -501,6 +511,11 @@ class Plugin(indigo.PluginBase):
 
         elif device_type in ['idtSmart', 'siSmart']:
 
+            stateList.append({  "Disabled"     : False, 
+                                "Key"          : "latestEventType", 
+                                "StateLabel"   : "Last Event",   
+                                "TriggerLabel" : "Last Event",   
+                                "Type"         : 150 })
             stateList.append({  "Disabled"     : False, 
                                 "Key"          : "device_type", 
                                 "StateLabel"   : "Model",   

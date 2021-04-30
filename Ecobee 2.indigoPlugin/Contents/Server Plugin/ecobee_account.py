@@ -228,8 +228,8 @@ class EcobeeAccount:
 
             self.thermostats[identifier]["remotes"] = remotes
             
-        self.logger.threaddebug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
-                                                                                              json.dumps(self.sensors, sort_keys=True, indent=4, separators=(',', ': '))))
+        self.logger.debug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
+                                                                                        json.dumps(self.sensors, sort_keys=True, indent=4, separators=(',', ': '))))
     def dump_data(self):
 
         self.logger.info(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')))
