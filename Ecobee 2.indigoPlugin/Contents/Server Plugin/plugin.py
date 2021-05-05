@@ -805,10 +805,11 @@ class Plugin(indigo.PluginBase):
         if stateKey == u"setpointCool":
             self.logger.info(u'{}: set cool to: {} and leave heat at: {}'.format(dev.name, newSetpoint, dev.heatSetpoint))
             self.ecobee_thermostats[dev.id].set_hold_temp(newSetpoint, dev.heatSetpoint, holdType)
-
+            dev.updateStateOnServer("setpointCool", newSetpoint)
         elif stateKey == u"setpointHeat":
             self.logger.info(u'{}: set heat to: {} and leave cool at: {}'.format(dev.name, newSetpoint,dev.coolSetpoint))
             self.ecobee_thermostats[dev.id].set_hold_temp(dev.coolSetpoint, newSetpoint, holdType)
+            dev.updateStateOnServer("setpointHeat", newSetpoint)
 
         else:
             self.logger.error(u'{}: handleChangeSetpointAction Invalid operation - {}'.format(dev.name, stateKey))
