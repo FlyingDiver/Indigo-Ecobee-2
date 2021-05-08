@@ -228,7 +228,7 @@ class EcobeeAccount:
 
             self.thermostats[identifier]["remotes"] = remotes
             
-        self.logger.debug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
+        self.logger.threaddebug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
                                                                                         json.dumps(self.sensors, sort_keys=True, indent=4, separators=(',', ': '))))
     def dump_data(self):
 
@@ -257,7 +257,7 @@ class EcobeeAccount:
         if serverStatus["code"] == 0:
             self.logger.debug("API '{}' request completed, result = {}".format(log_msg_action, request))
         else:
-            self.logger.warning("API '{}' request error, code  = {}, message = {}.".format(serverStatus["code"], serverStatus["message"]))
+            self.logger.warning("API '{}' request error, code  = {}, message = {}.".format(log_msg_action, serverStatus["code"], serverStatus["message"]))
 
 
 

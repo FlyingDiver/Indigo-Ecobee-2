@@ -33,6 +33,8 @@ class EcobeeThermostat:
         self.dev = dev
         self.address = dev.address
         self.ecobee = None
+        self.lastHeatSetpoint = dev.heatSetpoint
+        self.lastCoolSetpoint = dev.coolSetpoint
         
         self.logger.threaddebug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
@@ -202,6 +204,39 @@ class EcobeeThermostat:
         log_msg_action = "set HVAC mode"
         self.ecobee.make_request(body, log_msg_action)
 
+
+    def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
+        body =  {
+                    "selection": 
+                    {
+                        "selectionType"  : "thermostats",
+                        "selectionMatch" : self.dev.address 
+                    },
+                    "functions": 
+                    [
+                        {
+                            "type"   : "setHold", 
+                            "params" : 
+                            {
+                                "holdType": hold_type,
+                                "coolHoldTemp": int(cool_temp * 10),
+                                "heatHoldTemp": int(heat_temp * 10)
+                            }
+                        }
+                    ]
+                }
+        log_msg_action = "set hold temp"
+        self.ecobee.make_request(body, log_msg_action)
+
+    def set_hold_cool(self, cool_temp, hold_type="nextTransition"): 
+        self.lastCoolSetpoint = cool_temp
+        self.set_hold_temp(cool_temp, self.lastHeatSetpoint, hold_type)
+        
+
+    def set_hold_heat(self, heat_temp, hold_type="nextTransition"): 
+        self.lastHeatSetpoint = heat_temp
+        self.set_hold_temp(self.lastCoolSetpoint, heat_temp, hold_type)
+        
 
     def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
         body =  {

@@ -642,7 +642,9 @@ class Plugin(indigo.PluginBase):
     # Main thermostat action bottleneck called by Indigo Server.
    
     def actionControlThermostat(self, action, dev):
-        self.logger.debug(u"{}: action.thermostatAction: {}".format(dev.name, action.thermostatAction))
+        self.logger.debug(u"{}: action.thermostatAction: {}, action.actionValue: {}, setpointHeat: {}, setpointCool: {}".format(dev.name, 
+            action.thermostatAction, action.actionValue, dev.heatSetpoint, dev.coolSetpoint))
+            
        ###### SET HVAC MODE ######
         if action.thermostatAction == indigo.kThermostatAction.SetHvacMode:
             self.handleChangeHvacModeAction(dev, action.actionMode)
@@ -803,19 +805,20 @@ class Plugin(indigo.PluginBase):
         holdType = dev.pluginProps.get("holdType", "nextTransition")
 
         if stateKey == u"setpointCool":
-            self.logger.info(u'{}: set cool to: {} and leave heat at: {}'.format(dev.name, newSetpoint, dev.heatSetpoint))
-            self.ecobee_thermostats[dev.id].set_hold_temp(newSetpoint, dev.heatSetpoint, holdType)
-            dev.updateStateOnServer("setpointCool", newSetpoint)
+            self.logger.info(u'{}: set cool setpoint to: {}'.format(dev.name, newSetpoint))
+            self.ecobee_thermostats[dev.id].set_hold_cool(newSetpoint, holdType)
+
         elif stateKey == u"setpointHeat":
-            self.logger.info(u'{}: set heat to: {} and leave cool at: {}'.format(dev.name, newSetpoint,dev.coolSetpoint))
-            self.ecobee_thermostats[dev.id].set_hold_temp(dev.coolSetpoint, newSetpoint, holdType)
-            dev.updateStateOnServer("setpointHeat", newSetpoint)
+            self.logger.info(u'{}: set heat setpoint to: {}'.format(dev.name, newSetpoint))
+            self.ecobee_thermostats[dev.id].set_hold_heat(newSetpoint, holdType)
 
         else:
             self.logger.error(u'{}: handleChangeSetpointAction Invalid operation - {}'.format(dev.name, stateKey))
-        
+            return
+            
         self.update_needed = True
         if stateKey in dev.states:
+            self.logger.debug(u'{}: updating state {} to: {}'.format(dev.name, stateKey, newSetpoint))
             dev.updateStateOnServer(stateKey, newSetpoint, uiValue="%.1f °F" % (newSetpoint))
 
 
