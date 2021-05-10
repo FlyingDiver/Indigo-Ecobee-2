@@ -115,14 +115,16 @@ class EcobeeThermostat:
         update_list.append({'key' : "device_type", 'value' : device_type})
         
         hsp = thermostat_data.get('desiredHeat')
+        self.lastHeatSetpoint = EcobeeThermostat.temperatureFormatter.convert(hsp)
         update_list.append({'key'           : "setpointHeat", 
-                            'value'         : EcobeeThermostat.temperatureFormatter.convert(hsp), 
+                            'value'         : self.lastHeatSetpoint, 
                             'uiValue'       : EcobeeThermostat.temperatureFormatter.format(hsp),
                             'decimalPlaces' : 1})
 
         csp = thermostat_data.get('desiredCool')
+        self.lastCoolSetpoint = EcobeeThermostat.temperatureFormatter.convert(csp)
         update_list.append({'key'           : "setpointCool", 
-                            'value'         : EcobeeThermostat.temperatureFormatter.convert(csp), 
+                            'value'         : self.lastCoolSetpoint, 
                             'uiValue'       : EcobeeThermostat.temperatureFormatter.format(csp),
                             'decimalPlaces' : 1})
 
