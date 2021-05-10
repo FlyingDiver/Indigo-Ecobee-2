@@ -89,8 +89,8 @@ class EcobeeAccount:
             self.authenticated = False
             return
    
-        devName = indigo.devices[self.devID].name     
-        self.logger.debug(u"{}: Token Refresh, old refresh_token = {}".format(devName, self.refresh_token))
+        dev = indigo.devices[self.devID]     
+        self.logger.debug(u"{}: Token Refresh, old refresh_token = {}".format(dev.name, self.refresh_token))
 
         params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': API_KEY, 'ecobee_type': 'jwt'}
         try:
@@ -102,16 +102,16 @@ class EcobeeAccount:
             
         if request.status_code == requests.codes.ok:
             if self.access_token and request.json()['access_token'] == self.access_token:
-                self.logger.debug(u"{}: Access Token did not change".format(devName))
+                self.logger.debug(u"{}: Access Token did not change".format(dev.name))
             else:
                 self.access_token = request.json()['access_token']
-                self.logger.debug(u"{}: Token Refresh OK, new access_token = {}".format(devName, self.access_token))
+                self.logger.debug(u"{}: Token Refresh OK, new access_token = {}".format(dev.name, self.access_token))
             
             if self.refresh_token and request.json()['refresh_token'] == self.refresh_token:
-                self.logger.debug(u"{}: Refresh Token did not change".format(devName))
+                self.logger.debug(u"{}: Refresh Token did not change".format(dev.name))
             else:
                 self.refresh_token = request.json()['refresh_token']
-                self.logger.info(u"{}: Token Refresh OK, new refresh_token: {}".format(devName, self.refresh_token))
+                self.logger.info(u"{}: Token Refresh OK, new refresh_token: {}".format(dev.name, self.refresh_token))
 
             self.next_refresh = time.time() + (float(request.json()['expires_in']) * 0.80)
             self.authenticated = True
@@ -120,10 +120,10 @@ class EcobeeAccount:
         try:
             error = request.json()['error']
             if error == 'invalid_grant':
-                self.logger.error(u"{}: Token refresh failed, will retry in 5 minutes.".format(devName))
+                self.logger.error(u"{}: Token refresh failed, will retry in 5 minutes.".format(dev.name))
                 self.authenticated = False   
             else:                           
-                self.logger.error(u"{}: Token Refresh Error, error = {}".format(devName, error))
+                self.logger.error(u"{}: Token Refresh Error, error = {}".format(dev.name, error))
         except:
             pass
 
@@ -138,7 +138,7 @@ class EcobeeAccount:
 
     def server_update(self):
     
-        devName = indigo.devices[self.devID].name
+        dev = indigo.devices[self.devID]     
     
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
@@ -152,19 +152,19 @@ class EcobeeAccount:
         try:
             request = requests.get('https://api.ecobee.com/1/thermostat', headers=header, params=params)
         except requests.RequestException, e:
-            self.logger.error(u"{}: Ecobee Account Update Error, exception = {}".format(devName, e))
+            self.logger.error(u"{}: Ecobee Account Update Error, exception = {}".format(dev.name, e))
             return
             
         if request.status_code != requests.codes.ok:
-            self.logger.error(u"{}: Ecobee Account Update failed, response = '{}'".format(devName, request.text))                
+            self.logger.error(u"{}: Ecobee Account Update failed, response = '{}'".format(dev.name, request.text))                
             return
             
         stat_data = request.json()['thermostatList']
         status = request.json()['status']
         if status["code"] == 0:
-            self.logger.debug(u"{}: Ecobee Account Update OK, got info on {} thermostats".format(devName, len(stat_data)))
+            self.logger.debug(u"{}: Ecobee Account Update OK, got info on {} thermostats".format(dev.name, len(stat_data)))
         else:
-            self.logger.warning(u"{}: Ecobee Account Update Error, code  = {}, message = {}.".format(devName, status["code"], status["message"]))
+            self.logger.warning(u"{}: Ecobee Account Update Error, code  = {}, message = {}.".format(dev.name, status["code"], status["message"]))
             return
 
         self.logger.threaddebug(json.dumps(stat_data, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -172,7 +172,7 @@ class EcobeeAccount:
         # Extract the relevant info from the server data and put it in a convenient Dict form
         
         for therm in stat_data:
-            self.logger.debug(u"{}: getting data for '{}', {}".format(devName, therm[u"name"], therm[u"identifier"]))
+            self.logger.debug(u"{}: getting data for '{}', {}".format(dev.name, therm[u"name"], therm[u"identifier"]))
             
             identifier = therm["identifier"]
             self.thermostats[identifier] = {    
@@ -205,7 +205,7 @@ class EcobeeAccount:
             for remote in therm[u"remoteSensors"]:
 
                 if remote["type"] == "ecobee3_remote_sensor":
-                    self.logger.debug(u"{}: getting data for remote sensor '{}', {}".format(devName, remote[u"name"], remote[u"code"]))
+                    self.logger.debug(u"{}: getting data for remote sensor '{}', {}".format(dev.name, remote[u"name"], remote[u"code"]))
                     code = remote[u"code"]
                     remote_data = {u"name" : remote[u"name"], u"thermostat" : identifier}
                     for cap in remote["capability"]:
@@ -228,6 +228,8 @@ class EcobeeAccount:
 
             self.thermostats[identifier]["remotes"] = remotes
             
+        dev.updateStateOnServer(key="last_update", value=time.strftime("%d %b %Y %H:%M:%S"))
+
         self.logger.threaddebug("Thermostat Update, thermostats =\n{}\nsensors = {}\n".format(json.dumps(self.thermostats, sort_keys=True, indent=4, separators=(',', ': ')),
                                                                                         json.dumps(self.sensors, sort_keys=True, indent=4, separators=(',', ': '))))
     def dump_data(self):

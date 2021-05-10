@@ -123,6 +123,11 @@
                 <TriggerLabel>Authenticated</TriggerLabel>
                 <ControlPageLabel>Authenticated</ControlPageLabel>
             </State>
+            <State id="last_update" readonly="true">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Last Update</TriggerLabel>
+                <ControlPageLabel>Last Update</ControlPageLabel>
+            </State>
         </States>
     </Device>
  
