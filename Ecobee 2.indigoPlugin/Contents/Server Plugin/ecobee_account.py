@@ -52,12 +52,14 @@ class EcobeeAccount:
         if request.status_code == requests.codes.ok:
             self.authorization_code = request.json()['code']
             pin = request.json()['ecobeePin']
-            self.logger.info("PIN Request OK, pin = {}. authorization_code = {}".format(pin, self.authorization_code))
+            self.logger.info("PIN Request OK, pin = {}".format(pin))
             return pin
             
         else:
             self.logger.error("PIN Request failed, response = '{}'".format(request.text))                
             return None
+
+    # Authentication Step 2 is done on the Ecobee website using the PIN from step 1.
 
     # Authentication Step 3
     def get_tokens(self):
@@ -71,11 +73,10 @@ class EcobeeAccount:
             return
             
         if request.status_code == requests.codes.ok:
+            self.logger.info("Token Request OK")
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            expires_in = request.json()['expires_in']
-            self.logger.info("Token Request OK, access_token = {}, refresh_token = {}, expires_in = {}".format(self.access_token, self.refresh_token, expires_in))
-            self.next_refresh = time.time() + (float(expires_in) * 0.80)
+            self.next_refresh = time.time() + (float(request.json()['expires_in']) * 0.80)
             self.authenticated = True
         else:
             self.logger.error("Token Request failed, response = '{}'".format(request.text))                
