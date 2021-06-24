@@ -74,9 +74,10 @@ class Plugin(indigo.PluginBase):
     def startup(self):
         self.logger.info(u"Starting Ecobee")
        
+       # this will break if Apple every uses three part version numbers again
         macOS = platform.mac_ver()[0]
         self.logger.debug(u"macOS {}, Indigo {}".format(macOS, indigo.server.version))
-        if int(macOS[3:5]) < 13:
+        if float(macOS) < 10.13:
             self.logger.error(u"Unsupported macOS version! {}".format(macOS))
                 
         self.updateFrequency = float(self.pluginPrefs.get('updateFrequency', "15")) *  60.0
@@ -200,7 +201,10 @@ class Plugin(indigo.PluginBase):
         except:
             return []
         
-        if valuesDict["deviceType"] == "EcobeeThermostat":
+        if valuesDict.get('deviceType', None):
+            typeId = valuesDict['deviceType']
+            
+        if typeId == "EcobeeThermostat":
         
             active_stats =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -214,7 +218,7 @@ class Plugin(indigo.PluginBase):
                     available_devices.append((iden, therm["name"]))
         
                 
-        elif valuesDict["deviceType"] == "RemoteSensor":
+        elif typeId == "RemoteSensor":
 
             active_sensors =  [
                 (indigo.devices[dev].pluginProps["address"])
@@ -227,11 +231,11 @@ class Plugin(indigo.PluginBase):
                 if iden not in active_sensors:
                     available_devices.append((iden, sensor["name"]))
                 
-        elif valuesDict["deviceType"] == "EcobeeAccount":
+        elif typeId == "EcobeeAccount":
             return []
             
         else:
-            self.logger.warning("get_device_list: unknown deviceType = {}".format(valuesDict["deviceType"]))
+            self.logger.warning("get_device_list: unknown typeId = {}".format(typeId))
             return []
           
         if targetId:
@@ -241,7 +245,7 @@ class Plugin(indigo.PluginBase):
             except:
                 pass
 
-        self.logger.debug("get_device_list: available_devices for {} = {}".format(valuesDict["deviceType"], available_devices))
+        self.logger.debug("get_device_list: available_devices for {} = {}".format(typeId, available_devices))
         return available_devices     
 
     # doesn't do anything, just needed to force other menus to dynamically refresh
