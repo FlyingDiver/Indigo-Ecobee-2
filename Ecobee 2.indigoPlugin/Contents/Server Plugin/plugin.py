@@ -48,6 +48,10 @@ kFanModeEnumToStrMap = {
     indigo.kFanMode.AlwaysOn        : u"on"
 }
 
+minMacOS = "10.13"
+def versiontuple(v):
+    return tuple(map(int, (v.split("."))))
+
 class Plugin(indigo.PluginBase):
 
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
@@ -63,15 +67,11 @@ class Plugin(indigo.PluginBase):
     def startup(self):
         self.logger.info(u"Starting Ecobee")
        
-       # this will break if Apple ever uses three part version numbers again
         macOS = platform.mac_ver()[0]
         self.logger.debug(u"macOS {}, Indigo {}".format(macOS, indigo.server.version))
-        try:
-            if float(macOS) < 10.13:
-                self.logger.error(u"Unsupported macOS version! {}".format(macOS))
-        except:
-            self.logger.warning(u"Unable to verify macOS version! {}".format(macOS))
-        
+        if versiontuple(macOS) < versiontuple(minMacOS):
+            self.logger.error(u"Unsupported macOS version! {}".format(macOS))
+                
         self.updateFrequency = float(self.pluginPrefs.get('updateFrequency', "15")) *  60.0
         self.logger.debug(u"updateFrequency = {}".format(self.updateFrequency))
         self.next_update = time.time() + self.updateFrequency
