@@ -134,7 +134,7 @@
     <Device type="thermostat" id="EcobeeThermostat">
         <Name>Ecobee Thermostat</Name>
         <ConfigUI>
-            <Field id="SupportsStatusRequest" type="checkbox" defaultValue="false" hidden="true" />
+            <Field id="SupportsStatusRequest" type="checkbox" defaultValue="true" hidden="true" />
             <Field id="account" type="menu">
                 <Label>Ecobee Account:</Label>
                 <List class="self" method="get_account_list" dynamicReload="true"/>
