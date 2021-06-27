@@ -1,14 +1,9 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import requests
-import json
-import time
-import logging
-
 import temperature_scale
 import indigo
-
+import logging
 
 HVAC_MODE_MAP = {
     'heat'        : indigo.kHvacMode.Heat,
@@ -23,21 +18,30 @@ FAN_MODE_MAP = {
     'on'  : indigo.kFanMode.AlwaysOn
     }
 
-
-class EcobeeThermostat:
+class EcobeeDevice(object):
 
     temperatureFormatter = temperature_scale.Fahrenheit()
 
     def __init__(self, dev):
         self.logger = logging.getLogger('Plugin.ecobee_devices')
-        self.dev = dev
+        self.devID = dev.id
         self.address = dev.address
+        self.name = dev.name
         self.ecobee = None
-        self.lastHeatSetpoint = dev.heatSetpoint
-        self.lastCoolSetpoint = dev.coolSetpoint
-        
-        self.logger.threaddebug(u"{}: EcobeeThermostat __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
 
+        self.logger.threaddebug(u"{}: EcobeeDevice __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
+
+
+class EcobeeThermostat(EcobeeDevice):
+
+    def __init__(self, dev):
+        super(EcobeeThermostat, self).__init__(dev)
+
+        self.lastHeatSetpoint = dev.heatSetpoint
+        self.logger.debug(u"{}: __init__  lastHeatSetpoint: {}".format(dev.name, self.lastHeatSetpoint))
+        self.lastCoolSetpoint = dev.coolSetpoint
+        self.logger.debug(u"{}: __init__  lastCoolSetpoint: {}".format(dev.name, self.lastCoolSetpoint))
+        
         occupancy_id = dev.pluginProps.get('occupancy', None)
         if occupancy_id:
             self.logger.debug(u"{}: adding occupancy device {}".format(dev.name, occupancy_id))
@@ -57,19 +61,20 @@ class EcobeeThermostat:
 
     def update(self):
 
-        self.logger.debug(u"{}: Updating device".format(self.dev.name))
+        self.logger.debug(u"{}: Updating device".format(self.name))
+        device = indigo.devices[self.devID]
         
         # has the Ecobee account been initialized yet?
         if not self.ecobee:
 
             if len(indigo.activePlugin.ecobee_accounts) == 0:
-                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
+                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.name))
                 return
             
             try:
-                accountID = int(self.dev.pluginProps["account"])
+                accountID = device.pluginProps["account"]
                 self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.dev.name, accountID))
+                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.name, accountID))
             except:
                 self.logger.error(u"update: Error obtaining ecobee account object")
                 return
@@ -90,48 +95,42 @@ class EcobeeThermostat:
         
         ### fixup code ###
         try:
-            for code, dev_id in self.dev.pluginProps["remotes"].items():
+            for code, dev_id in device.pluginProps["remotes"].items():
                 remote = indigo.devices[int(dev_id)]
                 if len(remote.address) > 4:
                     newProps = remote.pluginProps
                     newProps["address"] = code
                     remote.replacePluginPropsOnServer(newProps)                
-                    self.logger.debug(u"{}: Updated address for remote sensor {}".format(self.dev.name, code))
+                    self.logger.debug(u"{}: Updated address for remote sensor {}".format(self.name, code))
         except: 
             pass              
         ###################
 
-        
         update_list = []
-        
-        self.name = thermostat_data.get('name')
-
-        last_event = thermostat_data.get('latestEventType')
-        self.dev.updateStateOnServer(key="latestEventType", value=last_event)
-        
-        device_type = thermostat_data.get('modelNumber')
-        self.dev.updateStateOnServer(key="device_type", value=device_type)
-        
-        update_list.append({'key' : "device_type", 'value' : device_type})
+    
+        update_list.append({'key' : "latestEventType", 'value' : thermostat_data.get('latestEventType')})        
         
         hsp = thermostat_data.get('desiredHeat')
-        self.lastHeatSetpoint = EcobeeThermostat.temperatureFormatter.convert(hsp)
+        self.lastHeatSetpoint = EcobeeDevice.temperatureFormatter.convertFromEcobee(hsp)
+        self.logger.debug(u"{}: Reported hsp: {}, converted hsp: {}".format(device.name, hsp,  self.lastHeatSetpoint))
         update_list.append({'key'           : "setpointHeat", 
-                            'value'         : self.lastHeatSetpoint, 
-                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(hsp),
+                            'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(hsp), 
+                            'uiValue'       : EcobeeDevice.temperatureFormatter.format(hsp),
                             'decimalPlaces' : 1})
 
         csp = thermostat_data.get('desiredCool')
-        self.lastCoolSetpoint = EcobeeThermostat.temperatureFormatter.convert(csp)
+        self.lastCoolSetpoint = EcobeeDevice.temperatureFormatter.convertFromEcobee(csp)
+        self.logger.debug(u"{}: Reported csp: {}, converted csp: {}".format(device.name, csp, self.lastCoolSetpoint))
         update_list.append({'key'           : "setpointCool", 
-                            'value'         : self.lastCoolSetpoint, 
-                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(csp),
+                            'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(csp), 
+                            'uiValue'       : EcobeeDevice.temperatureFormatter.format(csp),
                             'decimalPlaces' : 1})
 
         dispTemp = thermostat_data.get('actualTemperature')
+        self.logger.debug(u"{}: Reported dispTemp: {}, converted dispTemp: {}".format(device.name, dispTemp, EcobeeDevice.temperatureFormatter.convertFromEcobee(dispTemp)))
         update_list.append({'key'           : "temperatureInput1", 
-                            'value'         : EcobeeThermostat.temperatureFormatter.convert(dispTemp), 
-                            'uiValue'       : EcobeeThermostat.temperatureFormatter.format(dispTemp),
+                            'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(dispTemp), 
+                            'uiValue'       : EcobeeDevice.temperatureFormatter.format(dispTemp),
                             'decimalPlaces' : 1})
 
 
@@ -162,19 +161,23 @@ class EcobeeThermostat:
         val = bool(status and ('fan' in status or 'ventilator' in status))
         update_list.append({'key' : "hvacFanIsOn", 'value' : val})
         
+        device_type = thermostat_data.get('modelNumber')        
+        update_list.append({'key' : "device_type", 'value' : device_type})
+        
         if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart', 'vulcanSmart']:
         
             temp2 = thermostat_data.get('internal').get('temperature')
+            self.logger.debug(u"{}: Reported temp2: {}, converted temp2: {}".format(device.name, temp2, EcobeeDevice.temperatureFormatter.convertFromEcobee(temp2)))
             update_list.append({'key'           : "temperatureInput2", 
-                                'value'         : EcobeeThermostat.temperatureFormatter.convert(temp2), 
-                                'uiValue'       : EcobeeThermostat.temperatureFormatter.format(temp2),
+                                'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(temp2), 
+                                'uiValue'       : EcobeeDevice.temperatureFormatter.format(temp2),
                                 'decimalPlaces' : 1})
 
             latestEventType = thermostat_data.get('latestEventType')
             update_list.append({'key': "autoHome", 'value' : bool(latestEventType and ('autoHome' in latestEventType))})
             update_list.append({'key': "autoAway", 'value' : bool(latestEventType and ('autoAway' in latestEventType))})
 
-        self.dev.updateStatesOnServer(update_list)
+        device.updateStatesOnServer(update_list)
 
 
         if self.occupancy:
@@ -193,7 +196,7 @@ class EcobeeThermostat:
                     "selection": 
                     {
                         "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
+                        "selectionMatch" : self.address 
                     },
                     "thermostat" : 
                     {
@@ -207,45 +210,30 @@ class EcobeeThermostat:
         self.ecobee.make_request(body, log_msg_action)
 
 
-    def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
-        body =  {
-                    "selection": 
-                    {
-                        "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
-                    },
-                    "functions": 
-                    [
-                        {
-                            "type"   : "setHold", 
-                            "params" : 
-                            {
-                                "holdType": hold_type,
-                                "coolHoldTemp": int(cool_temp * 10),
-                                "heatHoldTemp": int(heat_temp * 10)
-                            }
-                        }
-                    ]
-                }
-        log_msg_action = "set hold temp"
-        self.ecobee.make_request(body, log_msg_action)
-
-    def set_hold_cool(self, cool_temp, hold_type="nextTransition"): 
+    def  set_hold_cool(self, cool_temp, hold_type="nextTransition"): 
+        self.logger.debug(u"{}: set_hold_cool: {}".format(self.name, cool_temp))
         self.lastCoolSetpoint = cool_temp
         self.set_hold_temp(cool_temp, self.lastHeatSetpoint, hold_type)
         
 
     def set_hold_heat(self, heat_temp, hold_type="nextTransition"): 
+        self.logger.debug(u"{}: set_hold_heat: {}".format(self.name, heat_temp))
         self.lastHeatSetpoint = heat_temp
         self.set_hold_temp(self.lastCoolSetpoint, heat_temp, hold_type)
         
 
     def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
+        self.logger.debug(u"{}: set_hold_temp, cool_temp: {}, heat_temp: {}".format(self.name, cool_temp, heat_temp))
+
+        eb_cool_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(cool_temp)
+        eb_heat_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(heat_temp)
+        self.logger.debug(u"{}: Converted setpoints cool: {}, heat: {}".format(self.name, eb_cool_temp, eb_heat_temp))
+
         body =  {
                     "selection": 
                     {
                         "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
+                        "selectionMatch" : self.address 
                     },
                     "functions": 
                     [
@@ -254,8 +242,8 @@ class EcobeeThermostat:
                             "params" : 
                             {
                                 "holdType": hold_type,
-                                "coolHoldTemp": int(cool_temp * 10),
-                                "heatHoldTemp": int(heat_temp * 10)
+                                "coolHoldTemp": eb_cool_temp,
+                                "heatHoldTemp": eb_heat_temp
                             }
                         }
                     ]
@@ -264,11 +252,17 @@ class EcobeeThermostat:
         self.ecobee.make_request(body, log_msg_action)
 
     def set_hold_temp_with_fan(self, cool_temp, heat_temp, hold_type="nextTransition"):     # Set a fan hold
+        self.logger.debug(u"{}: set_hold_temp_with_fan, cool_temp: {}, heat_temp: {}".format(self.name, cool_temp, heat_temp))
+
+        eb_cool_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(cool_temp)
+        eb_heat_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(heat_temp)
+        self.logger.debug(u"{}: Converted setpoints cool: {}, heat: {}".format(self.name, eb_cool_temp, eb_heat_temp))
+
         body =  {
                     "selection" : 
                     {
                         "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
+                        "selectionMatch" : self.address 
                     },
                     "functions" : 
                     [
@@ -277,8 +271,8 @@ class EcobeeThermostat:
                             "params" : 
                             {
                                 "holdType"     : hold_type,
-                                "coolHoldTemp" : int(cool_temp * 10),
-                                "heatHoldTemp" : int(heat_temp * 10),
+                                "coolHoldTemp" : eb_cool_temp,
+                                "heatHoldTemp" : eb_heat_temp,
                                 "fan"          : "on"
                             }
                         }
@@ -292,7 +286,7 @@ class EcobeeThermostat:
                     "selection" : 
                     {
                         "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
+                        "selectionMatch" : self.address 
                     },
                     "functions" : 
                     [
@@ -314,7 +308,7 @@ class EcobeeThermostat:
                     "selection" : 
                     {
                         "selectionType"  : "thermostats",
-                        "selectionMatch" : self.dev.address 
+                        "selectionMatch" : self.address 
                     },
                     "functions" : 
                     [
@@ -331,44 +325,32 @@ class EcobeeThermostat:
         self.ecobee.make_request(body, log_msg_action)
 
 
-class RemoteSensor:
-
-    temperatureFormatter = temperature_scale.Fahrenheit()
-
-    def __init__(self, dev):
-        self.logger = logging.getLogger('Plugin.ecobee_devices')
-        self.dev = dev
-        self.address = dev.address
-        self.ecobee = None
-        
-        self.logger.threaddebug(u"{}: RemoteSensor __init__ starting, pluginProps =\n{}".format(dev.name, dev.pluginProps))
-
-        return
-
+class RemoteSensor(EcobeeDevice):
 
     def update(self):
 
-        self.logger.debug(u"{}: Updating device".format(self.dev.name))
-        
+        self.logger.debug(u"{}: Updating device".format(self.name))
+        device = indigo.devices[self.devID]
+
         # has the Ecobee account been initialized yet?
         if not self.ecobee:
 
             if len(indigo.activePlugin.ecobee_accounts) == 0:
-                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.dev.name))
+                self.logger.debug(u"{}: No ecobee accounts available, skipping this device.".format(self.name))
                 return
             
             try:
-                accountID = int(self.dev.pluginProps["account"])
+                accountID = device.pluginProps["account"]
                 self.ecobee = indigo.activePlugin.ecobee_accounts[accountID]
-                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.dev.name, accountID))
+                self.logger.debug(u"{}: Ecobee Account device assigned, {}".format(self.name, accountID))
             except:
-                self.logger.error(u"updatable: Error obtaining ecobee account object")
+                self.logger.error(u"update: Error obtaining ecobee account object")
                 return
             
             if not self.ecobee.authenticated:
                 self.logger.info('not authenticated to Ecobee servers yet; not initializing state of device {}'.format(self.address))
                 return
-        
+                
         try: 
             remote_sensor = self.ecobee.sensors[self.address]
         except:
@@ -376,19 +358,20 @@ class RemoteSensor:
             return
                 
         occupied = remote_sensor.get('occupancy')
-        self.dev.updateStateOnServer(key="onOffState", value = occupied)
+        device.updateStateOnServer(key="onOffState", value = occupied)
         if occupied == u'true':
-            self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
+            device.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
         else:
-            self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
+            device.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
        
         temp = remote_sensor.get('temperature')
+        self.logger.debug(u"{}: Reported temp: {}, converted temp: {}".format(device.name, temp, EcobeeDevice.temperatureFormatter.convertFromEcobee(temp)))
         
         # check for non-digit values returned when remote is not responding
         if temp.isdigit():
-            self.dev.updateStateOnServer( key     = "sensorValue", 
-                                        value   = EcobeeThermostat.temperatureFormatter.convert(temp), 
-                                        uiValue = EcobeeThermostat.temperatureFormatter.format(temp),
+            device.updateStateOnServer( key     = "sensorValue", 
+                                        value   = EcobeeDevice.temperatureFormatter.convertFromEcobee(temp), 
+                                        uiValue = EcobeeDevice.temperatureFormatter.format(temp),
                                         decimalPlaces = 1)
 
 
