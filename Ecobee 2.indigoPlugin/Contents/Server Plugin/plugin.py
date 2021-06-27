@@ -741,22 +741,15 @@ class Plugin(indigo.PluginBase):
     def handleChangeSetpointAction(self, device, newSetpoint, stateKey):
         self.logger.debug(u"{}: handleChangeSetpointAction, newSetpoint: {}, stateKey: {}".format(device.name, newSetpoint, stateKey))
 
-        #   enforce minima/maxima based on the scale in use by the plugin
-        #newSetpoint = EcobeeDevice.temperatureFormatter.bounds(newSetpoint)
-        #self.logger.debug(u"{}: Bounded setpoint: {}".format(device.name, newSetpoint))
-
-        ebSetpoint = EcobeeDevice.temperatureFormatter.convertToEcobee(newSetpoint)
-        self.logger.debug(u"{}: Converted setpoint: {}".format(device.name, ebSetpoint))
-
         holdType = device.pluginProps.get("holdType", "nextTransition")
 
         if stateKey == u"setpointCool":
             self.logger.info(u'{}: set cool setpoint to: {}'.format(device.name, newSetpoint))
-            self.ecobee_thermostats[device.id].set_hold_cool(ebSetpoint, holdType)
+            self.ecobee_thermostats[device.id].set_hold_cool(newSetpoint, holdType)
 
         elif stateKey == u"setpointHeat":
             self.logger.info(u'{}: set heat setpoint to: {}'.format(device.name, newSetpoint))
-            self.ecobee_thermostats[device.id].set_hold_heat(ebSetpoint, holdType)
+            self.ecobee_thermostats[device.id].set_hold_heat(newSetpoint, holdType)
 
         else:
             self.logger.error(u'{}: handleChangeSetpointAction Invalid operation - {}'.format(device.name, stateKey))

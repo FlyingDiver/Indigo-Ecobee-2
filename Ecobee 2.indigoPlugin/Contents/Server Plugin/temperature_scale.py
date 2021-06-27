@@ -26,23 +26,17 @@ class Fahrenheit(TemperatureScale):
     def suffix(self):
         return u"°F"
         
-    def bounds(self, setpoint):
-        return min(max(setpoint, 40), 95)
-
 class Celsius(TemperatureScale):
 
     def convertFromEcobee(self, reading):
         return ((float(reading) / 10.0) - 32.0) * 5.0 / 9.0
         
     def convertToEcobee(self, temp):
-        return int((9.0 * temp)/5.0 + 3.0) * 10
+        return int((9.0 * temp)/5.0 + 32.0) * 10
         
     def suffix(self):
         return u"°C"
         
-    def bounds(self, setpoint):
-        return min(max(setpoint, 6), 35)
-
 class Kelvin(TemperatureScale):
 
     def convertFromEcobee(self, reading):
@@ -54,9 +48,6 @@ class Kelvin(TemperatureScale):
     def suffix(self):
         return u"K"
         
-    def bounds(self, setpoint):
-        return min(max(setpoint, 277), 308)
-
 class Rankine(TemperatureScale):
 
     def convertFromEcobee(self, reading):
@@ -68,5 +59,3 @@ class Rankine(TemperatureScale):
     def suffix(self):
         return u"°Ra"
         
-    def bounds(self, setpoint):
-        return min(max(setpoint, 500), 555)

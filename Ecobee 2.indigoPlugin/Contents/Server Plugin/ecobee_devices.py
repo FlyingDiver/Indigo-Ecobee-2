@@ -38,9 +38,9 @@ class EcobeeThermostat(EcobeeDevice):
         super(EcobeeThermostat, self).__init__(dev)
 
         self.lastHeatSetpoint = dev.heatSetpoint
-        self.logger.debug(u"{}: lastHeatSetpoint: {}".format(dev.name, self.lastHeatSetpoint))
+        self.logger.debug(u"{}: __init__  lastHeatSetpoint: {}".format(dev.name, self.lastHeatSetpoint))
         self.lastCoolSetpoint = dev.coolSetpoint
-        self.logger.debug(u"{}: lastCoolSetpoint: {}".format(dev.name, self.lastCoolSetpoint))
+        self.logger.debug(u"{}: __init__  lastCoolSetpoint: {}".format(dev.name, self.lastCoolSetpoint))
         
         occupancy_id = dev.pluginProps.get('occupancy', None)
         if occupancy_id:
@@ -111,18 +111,18 @@ class EcobeeThermostat(EcobeeDevice):
         update_list.append({'key' : "latestEventType", 'value' : thermostat_data.get('latestEventType')})        
         
         hsp = thermostat_data.get('desiredHeat')
-        self.logger.debug(u"{}: Reported hsp: {}, converted hsp: {}".format(device.name, hsp, EcobeeDevice.temperatureFormatter.convertFromEcobee(hsp)))
         self.lastHeatSetpoint = EcobeeDevice.temperatureFormatter.convertFromEcobee(hsp)
+        self.logger.debug(u"{}: Reported hsp: {}, converted hsp: {}".format(device.name, hsp,  self.lastHeatSetpoint))
         update_list.append({'key'           : "setpointHeat", 
-                            'value'         : self.lastHeatSetpoint, 
+                            'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(hsp), 
                             'uiValue'       : EcobeeDevice.temperatureFormatter.format(hsp),
                             'decimalPlaces' : 1})
 
         csp = thermostat_data.get('desiredCool')
-        self.logger.debug(u"{}: Reported csp: {}, converted csp: {}".format(device.name, csp, EcobeeDevice.temperatureFormatter.convertFromEcobee(csp)))
         self.lastCoolSetpoint = EcobeeDevice.temperatureFormatter.convertFromEcobee(csp)
+        self.logger.debug(u"{}: Reported csp: {}, converted csp: {}".format(device.name, csp, self.lastCoolSetpoint))
         update_list.append({'key'           : "setpointCool", 
-                            'value'         : self.lastCoolSetpoint, 
+                            'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(csp), 
                             'uiValue'       : EcobeeDevice.temperatureFormatter.format(csp),
                             'decimalPlaces' : 1})
 
@@ -211,16 +211,24 @@ class EcobeeThermostat(EcobeeDevice):
 
 
     def  set_hold_cool(self, cool_temp, hold_type="nextTransition"): 
+        self.logger.debug(u"{}: set_hold_cool: {}".format(self.name, cool_temp))
         self.lastCoolSetpoint = cool_temp
         self.set_hold_temp(cool_temp, self.lastHeatSetpoint, hold_type)
         
 
     def set_hold_heat(self, heat_temp, hold_type="nextTransition"): 
+        self.logger.debug(u"{}: set_hold_heat: {}".format(self.name, heat_temp))
         self.lastHeatSetpoint = heat_temp
         self.set_hold_temp(self.lastCoolSetpoint, heat_temp, hold_type)
         
 
     def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):  # Set a hold
+        self.logger.debug(u"{}: set_hold_temp, cool_temp: {}, heat_temp: {}".format(self.name, cool_temp, heat_temp))
+
+        eb_cool_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(cool_temp)
+        eb_heat_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(heat_temp)
+        self.logger.debug(u"{}: Converted setpoints cool: {}, heat: {}".format(self.name, eb_cool_temp, eb_heat_temp))
+
         body =  {
                     "selection": 
                     {
@@ -234,8 +242,8 @@ class EcobeeThermostat(EcobeeDevice):
                             "params" : 
                             {
                                 "holdType": hold_type,
-                                "coolHoldTemp": cool_temp,
-                                "heatHoldTemp": heat_temp
+                                "coolHoldTemp": eb_cool_temp,
+                                "heatHoldTemp": eb_heat_temp
                             }
                         }
                     ]
@@ -244,6 +252,12 @@ class EcobeeThermostat(EcobeeDevice):
         self.ecobee.make_request(body, log_msg_action)
 
     def set_hold_temp_with_fan(self, cool_temp, heat_temp, hold_type="nextTransition"):     # Set a fan hold
+        self.logger.debug(u"{}: set_hold_temp_with_fan, cool_temp: {}, heat_temp: {}".format(self.name, cool_temp, heat_temp))
+
+        eb_cool_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(cool_temp)
+        eb_heat_temp = EcobeeDevice.temperatureFormatter.convertToEcobee(heat_temp)
+        self.logger.debug(u"{}: Converted setpoints cool: {}, heat: {}".format(self.name, eb_cool_temp, eb_heat_temp))
+
         body =  {
                     "selection" : 
                     {
@@ -257,8 +271,8 @@ class EcobeeThermostat(EcobeeDevice):
                             "params" : 
                             {
                                 "holdType"     : hold_type,
-                                "coolHoldTemp" : cool_temp,
-                                "heatHoldTemp" : heat_temp,
+                                "coolHoldTemp" : eb_cool_temp,
+                                "heatHoldTemp" : eb_heat_temp,
                                 "fan"          : "on"
                             }
                         }
