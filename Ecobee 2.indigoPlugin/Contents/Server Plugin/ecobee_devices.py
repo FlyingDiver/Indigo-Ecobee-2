@@ -138,6 +138,7 @@ class EcobeeThermostat(EcobeeDevice):
         update_list.append({'key' : "climate", 'value' : climate})
 
         hvacMode = thermostat_data.get('hvacMode')
+        update_list.append({'key' : "hvacMode", 'value' : hvacMode})
         update_list.append({'key' : "hvacOperationMode", 'value' : HVAC_MODE_MAP[hvacMode]})
 
         fanMode = thermostat_data.get('desiredFanMode')
