@@ -167,11 +167,16 @@ class EcobeeThermostat(EcobeeDevice):
         
         if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart', 'vulcanSmart']:
         
-            temp2 = thermostat_data.get('internal').get('temperature')
-            self.logger.debug(u"{}: Reported temp2: {}, converted temp2: {}".format(device.name, temp2, EcobeeDevice.temperatureFormatter.convertFromEcobee(temp2)))
-            update_list.append({'key'           : "temperatureInput2", 
-                                'value'         : EcobeeDevice.temperatureFormatter.convertFromEcobee(temp2), 
-                                'uiValue'       : EcobeeDevice.temperatureFormatter.format(temp2),
+            internalTemp = thermostat_data.get('internal').get('temperature')
+            try:
+                convertedTemp = EcobeeDevice.temperatureFormatter.convertFromEcobee(internalTemp)
+            except:
+                self.logger.warning(u"{}: Error converting internalTemp {}".format(device.name, internalTemp))
+            else:
+                self.logger.debug(u"{}: Reported internalTemp: {}, converted internalTemp: {}".format(device.name, internalTemp, convertedTemp))
+                update_list.append({'key'       : "temperatureInput2", 
+                                'value'         : convertedTemp, 
+                                'uiValue'       : EcobeeDevice.temperatureFormatter.format(internalTemp),
                                 'decimalPlaces' : 1})
 
             latestEventType = thermostat_data.get('latestEventType')
@@ -366,10 +371,10 @@ class RemoteSensor(EcobeeDevice):
             device.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)
        
         temp = remote_sensor.get('temperature')
-        self.logger.debug(u"{}: Reported temp: {}, converted temp: {}".format(device.name, temp, EcobeeDevice.temperatureFormatter.convertFromEcobee(temp)))
         
         # check for non-digit values returned when remote is not responding
         if temp.isdigit():
+            self.logger.debug(u"{}: Reported temp: {}, converted temp: {}".format(device.name, temp, EcobeeDevice.temperatureFormatter.convertFromEcobee(temp)))
             device.updateStateOnServer( key     = "sensorValue", 
                                         value   = EcobeeDevice.temperatureFormatter.convertFromEcobee(temp), 
                                         uiValue = EcobeeDevice.temperatureFormatter.format(temp),
