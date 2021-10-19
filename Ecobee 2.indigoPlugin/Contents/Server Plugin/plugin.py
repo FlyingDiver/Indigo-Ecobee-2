@@ -787,8 +787,7 @@ class Plugin(indigo.PluginBase):
         
         if newFanMode == u"on":
             self.logger.info(u'{}: set fan to ON, leave cool at {} and heat at {}'.format(device.name, device.coolSetpoint, device.heatSetpoint))
-            self.ecobee_thermostats[device.id].set_hold_temp_with_fan(EcobeeDevice.temperatureFormatter.convertToEcobee(device.coolSetpoint), 
-                EcobeeDevice.temperatureFormatter.convertToEcobee(device.heatSetpoint), holdType)
+            self.ecobee_thermostats[device.id].set_hold_temp_with_fan(device.coolSetpoint, device.heatSetpoint, holdType)
 
         if newFanMode == u"auto":
             self.logger.info(u'{}: resume normal program to set fan to Auto'.format(device.name))
