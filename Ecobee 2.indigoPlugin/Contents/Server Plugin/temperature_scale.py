@@ -10,52 +10,64 @@ class TemperatureScale:
         return txt
 
     def format(self, reading):
-        return u"%s%s" % (FORMAT_STRING.format(self.convertFromEcobee(reading)), self.suffix())
+        return f"{FORMAT_STRING.format(self.convertFromEcobee(reading))}{self.suffix()}"
 
 
 class Fahrenheit(TemperatureScale):
 
     # convertFromEcobee() methods input the Ecobee temperature value (F x 10) and output the converted value for the class
-    def convertFromEcobee(self, temp):
+    @staticmethod
+    def convertFromEcobee(temp):
         return float(temp) / 10.0
         
     # convertToEcobee() methods input the temperature value in the current scale and output the Ecobee value int(F x 10)
-    def convertToEcobee(self, temp):
+    @staticmethod
+    def convertToEcobee(temp):
         return int(temp * 10)
         
-    def suffix(self):
-        return u"°F"
+    @staticmethod
+    def suffix():
+        return "°F"
         
 class Celsius(TemperatureScale):
 
-    def convertFromEcobee(self, reading):
+    @staticmethod
+    def convertFromEcobee(reading):
         return ((float(reading) / 10.0) - 32.0) * 5.0 / 9.0
         
-    def convertToEcobee(self, temp):
+    @staticmethod
+    def convertToEcobee(temp):
         return int((9.0 * temp)/5.0 + 32.0) * 10
         
-    def suffix(self):
-        return u"°C"
+    @staticmethod
+    def suffix():
+        return "°C"
         
 class Kelvin(TemperatureScale):
 
-    def convertFromEcobee(self, reading):
+    @staticmethod
+    def convertFromEcobee(reading):
         return (((float(reading) / 10.0) - 32.0) * 5.0 / 9.0) + 273.15
         
-    def convertToEcobee(self, temp):
+    @staticmethod
+    def convertToEcobee(temp):
         return int((9.0 * temp)/5.0 - 459.67) * 10
         
-    def suffix(self):
+    @staticmethod
+    def suffix():
         return u"K"
         
 class Rankine(TemperatureScale):
 
-    def convertFromEcobee(self, reading):
+    @staticmethod
+    def convertFromEcobee(reading):
         return (float(reading) / 10.0) + 459.67
         
-    def convertToEcobee(self, temp):
+    @staticmethod
+    def convertToEcobee(temp):
         return int(temp - 459.67) * 10
         
-    def suffix(self):
-        return u"°Ra"
+    @staticmethod
+    def suffix():
+        return "°Ra"
         
