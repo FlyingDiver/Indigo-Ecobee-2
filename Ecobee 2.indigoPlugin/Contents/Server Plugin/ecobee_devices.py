@@ -23,13 +23,13 @@ class EcobeeDevice(object):
     temperatureFormatter = temperature_scale.Fahrenheit()
 
     def __init__(self, dev):
-        self.logger.threaddebug(f"{dev.name}: EcobeeDevice __init__ starting, pluginProps =\n{dev.pluginProps}")
-
         self.logger = logging.getLogger('Plugin.ecobee_devices')
         self.devID = dev.id
         self.address = dev.address
         self.name = dev.name
         self.ecobee = None
+
+        self.logger.threaddebug(f"{dev.name}: EcobeeDevice __init__ starting, pluginProps =\n{dev.pluginProps}")
 
 
 class EcobeeThermostat(EcobeeDevice):

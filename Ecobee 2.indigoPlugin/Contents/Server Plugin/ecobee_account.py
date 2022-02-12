@@ -12,7 +12,7 @@ import indigo
 # All interactions with the Ecobee servers are encapsulated in this class
 #
 
-API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"
+API_KEY = "opSMO6RtoUlhoAtlQehNZdaOZ6EQBO6Q"    # specific to this plugin
 
 
 class EcobeeAccount:
@@ -105,7 +105,7 @@ class EcobeeAccount:
                 self.logger.debug(f"{dev.name}: Access Token did not change")
             else:
                 self.access_token = request.json()['access_token']
-                self.logger.debug(f"{dev.name}: Token Refresh OK, new access_token = {self.access_token}")
+                self.logger.debug(f"{dev.name}: Token Refresh OK, new Access Token")
 
             if self.refresh_token and request.json()['refresh_token'] == self.refresh_token:
                 self.logger.debug(f"{dev.name}: Refresh Token did not change")
