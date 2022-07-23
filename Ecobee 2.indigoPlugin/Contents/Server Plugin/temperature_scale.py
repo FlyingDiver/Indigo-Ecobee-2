@@ -23,7 +23,7 @@ class Fahrenheit(TemperatureScale):
     # convertToEcobee() methods input the temperature value in the current scale and output the Ecobee value int(F x 10)
     @staticmethod
     def convertToEcobee(temp):
-        return int(temp * 10)
+        return int(temp * 10.0)
         
     @staticmethod
     def suffix():
@@ -37,7 +37,7 @@ class Celsius(TemperatureScale):
         
     @staticmethod
     def convertToEcobee(temp):
-        return int((9.0 * temp)/5.0 + 32.0) * 10
+        return int(((9.0 * temp)/5.0 + 32.0) * 10.0)
         
     @staticmethod
     def suffix():
@@ -51,7 +51,7 @@ class Kelvin(TemperatureScale):
         
     @staticmethod
     def convertToEcobee(temp):
-        return int((9.0 * temp)/5.0 - 459.67) * 10
+        return int(((9.0 * temp)/5.0 - 459.67) * 10.0)
         
     @staticmethod
     def suffix():
@@ -65,7 +65,7 @@ class Rankine(TemperatureScale):
         
     @staticmethod
     def convertToEcobee(temp):
-        return int(temp - 459.67) * 10
+        return int((temp - 459.67) * 10.0)
         
     @staticmethod
     def suffix():

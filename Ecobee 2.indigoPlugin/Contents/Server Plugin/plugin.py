@@ -48,12 +48,6 @@ kFanModeEnumToStrMap = {
     indigo.kFanMode.AlwaysOn: "on"
 }
 
-minMacOS = "10.13"
-
-def versiontuple(v):
-    return tuple(map(int, (v.split("."))))
-
-
 class Plugin(indigo.PluginBase):
 
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
@@ -62,6 +56,7 @@ class Plugin(indigo.PluginBase):
         self.plugin_file_handler.setFormatter(pfmt)
         self.logLevel = int(self.pluginPrefs.get("logLevel", logging.INFO))
         self.indigo_log_handler.setLevel(self.logLevel)
+        self.plugin_file_handler.setLevel(self.logLevel)
         self.logger.debug(f"logLevel = {self.logLevel}")
 
         self.ecobee_accounts = {}
@@ -71,11 +66,6 @@ class Plugin(indigo.PluginBase):
 
         self.update_needed = False
 
-        macOS = platform.mac_ver()[0]
-        self.logger.debug(f"macOS {macOS}, Indigo {indigo.server.version}")
-        if versiontuple(macOS) < versiontuple(minMacOS):
-            self.logger.error(f"Unsupported macOS version! {macOS}")
-
         self.updateFrequency = float(self.pluginPrefs.get('updateFrequency', "15")) * 60.0
         self.logger.debug(f"updateFrequency = {self.updateFrequency}")
         self.next_update = time.time() + self.updateFrequency
@@ -83,12 +73,6 @@ class Plugin(indigo.PluginBase):
         scale = self.pluginPrefs.get(TEMPERATURE_SCALE_PLUGIN_PREF, 'F')
         self.logger.debug(f'setting temperature scale to {scale}')
         EcobeeDevice.temperatureFormatter = TEMP_CONVERTERS[scale]
-
-    def startup(self):
-        self.logger.info("Starting Ecobee")
-
-    def shutdown(self):
-        self.logger.info("Stopping Ecobee")
 
     def validatePrefsConfigUi(self, valuesDict):    # noqa
         errorDict = indigo.Dict()
@@ -103,6 +87,7 @@ class Plugin(indigo.PluginBase):
         if not userCancelled:
             self.logLevel = int(valuesDict.get("logLevel", logging.INFO))
             self.indigo_log_handler.setLevel(self.logLevel)
+            self.plugin_file_handler.setLevel(self.logLevel)
             self.logger.debug(f"logLevel = {str(self.logLevel)}")
 
             self.updateFrequency = float(valuesDict['updateFrequency']) * 60.0

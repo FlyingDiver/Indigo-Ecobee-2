@@ -4,13 +4,13 @@
 
 The plugin enables monitoring and control of Ecobee thermostats and remote sensors.
 	
-| Requirement            |                     |   |
-|------------------------|---------------------|---|
-| Minimum Indigo Version | 2022.1              |   |
-| Python Library (API)   | Official            |   |
-| Requires Local Network | No                  |   |
-| Requires Internet      | Yes                 |   |
-| Hardware Interface     | None                |   |
+| Requirement            |                     |
+|------------------------|---------------------|
+| Minimum Indigo Version | 2022.1              |
+| Python Library (API)   | Official            |
+| Requires Local Network | No                  |
+| Requires Internet      | Yes                 |
+| Hardware Interface     | None                |
 
 Requirements:
 
