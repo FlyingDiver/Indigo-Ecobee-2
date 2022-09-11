@@ -159,7 +159,7 @@ class EcobeeThermostat(EcobeeDevice):
         device_type = thermostat_data.get('modelNumber')
         update_list.append({'key': "device_type", 'value': device_type})
 
-        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart', 'vulcanSmart']:
+        if device_type in ['athenaSmart', 'nikeSmart', 'apolloSmart', 'vulcanSmart', 'aresSmart']:
 
             internalTemp = thermostat_data.get('internal').get('temperature')
             try:
