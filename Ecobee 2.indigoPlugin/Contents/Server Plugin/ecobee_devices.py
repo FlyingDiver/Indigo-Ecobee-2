@@ -302,7 +302,7 @@ class RemoteSensor(EcobeeDevice):
 
         occupied = remote_sensor.get('occupancy')
         device.updateStateOnServer(key="onOffState", value=occupied)
-        if occupied == u'true':
+        if occupied == 'true':
             device.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
         else:
             device.updateStateImageOnServer(indigo.kStateImageSel.MotionSensor)

@@ -52,4 +52,21 @@
             </Field>
         </ConfigUI>
     </Action>
+
+    <Action id="setMode" deviceFilter="self.EcobeeThermostat">
+        <Name>Set Thermostate Mode</Name>
+        <CallbackMethod>actionSetMode</CallbackMethod>
+        <ConfigUI>
+        ￼   <Field type="menu" id="mode" defaultValue="auto">
+                <Label>Mode:</Label>
+                <List>
+                    <Option value="heat">Heat</Option>
+                    <Option value="cool">Cool</Option>
+                    <Option value="auto">Auto</Option>
+                    <Option value="auxHeatOnly">Aux Heat Only</Option>
+                    <Option value="off">Off</Option>
+                </List>
+            </Field>
+        </ConfigUI>
+    </Action>
 </Actions>

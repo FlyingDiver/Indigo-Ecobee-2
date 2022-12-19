@@ -7,8 +7,6 @@
     <List>
       <Option value="F">Fahrenheit</Option>
       <Option value="C">Celsius</Option>
-      <Option value="K">Kelvin</Option>
-      <Option value="R">Rankine</Option>
     </List>
   </Field>
   

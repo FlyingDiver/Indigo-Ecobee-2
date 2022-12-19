@@ -30,9 +30,7 @@ ECOBEE_MODELS = {
 
 TEMP_CONVERTERS = {
     'F': temperature_scale.Fahrenheit(),
-    'C': temperature_scale.Celsius(),
-    'K': temperature_scale.Kelvin(),
-    'R': temperature_scale.Rankine()
+    'C': temperature_scale.Celsius()
 }
 
 kHvacModeEnumToStrMap = {
@@ -686,9 +684,20 @@ class Plugin(indigo.PluginBase):
         self.logger.debug(f"climateListGenerator: typeId = {typeId}, targetId = {targetId}")
         return self.ecobee_thermostats[targetId].get_climates()
 
-    ########################################
-    # Set Hold Type
-    ########################################
+        ########################################
+        # Set Heat Mode
+        ########################################
+
+    def actionSetMode(self, action, device):
+        mode = action.props.get("mode", "auto")
+        self.logger.debug(f"{device.name}: actionSetMode: {mode}")
+
+        self.ecobee_thermostats[device.id].set_hvac_mode(mode)
+        self.update_needed = True
+
+        ########################################
+        # Set Hold Type
+        ########################################
 
     def actionSetDefaultHoldType(self, action, device):
         self.logger.debug(f"{device.name}: actionSetDefaultHoldType")
@@ -697,8 +706,7 @@ class Plugin(indigo.PluginBase):
         props["holdType"] = action.props.get("holdType", "nextTransition")
         device.replacePluginPropsOnServer(props)
 
-        ########################################
-
+    ########################################
     # Process action request from Indigo Server to change main thermostat's main mode.
     ########################################
 

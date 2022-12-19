@@ -3,6 +3,9 @@
 
 FORMAT_STRING = "{0:.1f}"
 
+def round_to_nearest_half_int(num):
+    return round(num * 2) / 2
+
 class TemperatureScale:
 
     def report(self, dev, stateKey, reading):
@@ -33,8 +36,9 @@ class Celsius(TemperatureScale):
 
     @staticmethod
     def convertFromEcobee(reading):
+#        return round_to_nearest_half_int(((float(reading) / 10.0) - 32.0) * 5.0 / 9.0)
         return ((float(reading) / 10.0) - 32.0) * 5.0 / 9.0
-        
+
     @staticmethod
     def convertToEcobee(temp):
         return int(((9.0 * temp)/5.0 + 32.0) * 10.0)
@@ -42,32 +46,4 @@ class Celsius(TemperatureScale):
     @staticmethod
     def suffix():
         return "°C"
-        
-class Kelvin(TemperatureScale):
-
-    @staticmethod
-    def convertFromEcobee(reading):
-        return (((float(reading) / 10.0) - 32.0) * 5.0 / 9.0) + 273.15
-        
-    @staticmethod
-    def convertToEcobee(temp):
-        return int(((9.0 * temp)/5.0 - 459.67) * 10.0)
-        
-    @staticmethod
-    def suffix():
-        return u"K"
-        
-class Rankine(TemperatureScale):
-
-    @staticmethod
-    def convertFromEcobee(reading):
-        return (float(reading) / 10.0) + 459.67
-        
-    @staticmethod
-    def convertToEcobee(temp):
-        return int((temp - 459.67) * 10.0)
-        
-    @staticmethod
-    def suffix():
-        return "°Ra"
         
