@@ -25,7 +25,7 @@ ECOBEE_MODELS = {
     'apolloSmart': 'ecobee4 Smart',
     'vulcanSmart': 'ecobee Smart w/ Voice Control',
     'aresSmart': 'ecobee Smart Thermostat Premium',
-    'xxxSmart': 'ecobee Smart Thermostat Enhanced',
+    'artemisSmart': 'ecobee Smart Thermostat Enhanced',
 }
 
 TEMP_CONVERTERS = {
