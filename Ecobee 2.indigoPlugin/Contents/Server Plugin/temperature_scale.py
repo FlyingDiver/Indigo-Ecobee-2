@@ -36,7 +36,6 @@ class Celsius(TemperatureScale):
 
     @staticmethod
     def convertFromEcobee(reading):
-#        return round_to_nearest_half_int(((float(reading) / 10.0) - 32.0) * 5.0 / 9.0)
         return ((float(reading) / 10.0) - 32.0) * 5.0 / 9.0
 
     @staticmethod

@@ -103,6 +103,8 @@ class EcobeeThermostat(EcobeeDevice):
             pass
             ###################
 
+        self.logger.debug(f"{self.name}: {thermostat_data=}")
+
         update_list = [{'key': "latestEventType", 'value': thermostat_data.get('latestEventType')}]
 
         hsp = thermostat_data.get('desiredHeat')

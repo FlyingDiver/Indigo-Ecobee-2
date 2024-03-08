@@ -25,7 +25,7 @@ ECOBEE_MODELS = {
     'apolloSmart': 'ecobee4 Smart',
     'vulcanSmart': 'ecobee Smart w/ Voice Control',
     'aresSmart': 'ecobee Smart Thermostat Premium',
-    'xxxSmart': 'ecobee Smart Thermostat Enhanced',
+    'artemisSmart': 'ecobee Smart Thermostat Enhanced',
 }
 
 TEMP_CONVERTERS = {
@@ -364,10 +364,10 @@ class Plugin(indigo.PluginBase):
 
             # set props based on device type
 
-            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart', 'aresSmart']:
+            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart', 'aresSmart', 'artemisSmart']:
                 newProps["NumTemperatureInputs"] = 2
 
-            if device_type in ['athenaSmart', 'apolloSmart', 'corSmart', 'vulcanSmart', 'aresSmart']:  # Has integral occupancy sensor.
+            if device_type in ['athenaSmart', 'apolloSmart', 'corSmart', 'vulcanSmart', 'aresSmart', 'artemisSmart']:  # Has integral occupancy sensor.
 
                 sensor_name = f"{dev.name} Occupancy"
                 self.logger.info(f"Adding Occupancy Sensor '{sensor_name}' to '{dev.name}'")
@@ -380,7 +380,7 @@ class Plugin(indigo.PluginBase):
                 newProps["occupancy"] = newdev.id
                 self.logger.info(f"Created EcobeeThermostat Occupancy device '{newdev.name}'")
 
-            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart', 'aresSmart']:  # Supports linked remote sensors
+            if device_type in ['athenaSmart', 'apolloSmart', 'nikeSmart', 'vulcanSmart', 'aresSmart', 'artemisSmart']:  # Supports linked remote sensors
 
                 remotes = thermostat.get("remotes")
                 self.logger.debug(f"{dev.name}: {len(remotes)} remotes")
@@ -450,7 +450,7 @@ class Plugin(indigo.PluginBase):
         stateList = indigo.PluginBase.getDeviceStateList(self, dev)
         device_type = dev.pluginProps.get("device_type", None)
 
-        if device_type in ['athenaSmart', 'corSmart', 'apolloSmart', 'vulcanSmart', 'aresSmart']:
+        if device_type in ['athenaSmart', 'corSmart', 'apolloSmart', 'vulcanSmart', 'aresSmart', 'artemisSmart']:
 
             stateList.append({"Disabled": False,
                               "Key": "hvacMode",
