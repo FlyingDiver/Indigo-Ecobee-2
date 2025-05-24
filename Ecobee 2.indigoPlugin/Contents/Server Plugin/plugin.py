@@ -26,6 +26,7 @@ ECOBEE_MODELS = {
     'vulcanSmart': 'ecobee Smart w/ Voice Control',
     'aresSmart': 'ecobee Smart Thermostat Premium',
     'artemisSmart': 'ecobee Smart Thermostat Enhanced',
+    'attisRetail': 'ecobee Smart Thermostat Essential',
 }
 
 TEMP_CONVERTERS = {
@@ -498,7 +499,7 @@ class Plugin(indigo.PluginBase):
                               "TriggerLabel": "Minimum fan time",
                               "Type": 100})
 
-        elif device_type in ['nikeSmart']:
+        elif device_type in ['nikeSmart', 'attisRetail']:
 
             stateList.append({"Disabled": False,
                               "Key": "hvacMode",
